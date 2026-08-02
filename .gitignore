@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# Intermediate/generated artifacts
+hybrid_input.csv
+csf_rules.csv
+csf_cate.csv
+csf_model.rds
+paper_results_full.csv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
