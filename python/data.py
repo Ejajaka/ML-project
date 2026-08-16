@@ -24,7 +24,7 @@ def load_pbc():
     
     # Encode categoricals
     for col in covariates:
-        if df[col].dtype == "object":
+        if pd.api.types.is_string_dtype(df[col]):
             df[col] = pd.factorize(df[col])[0]
     
     # Impute missing values with median

@@ -38,7 +38,7 @@ def load_support():
     df = df[['death', 'd.time'] + use_cols].dropna()
     df = df[df['d.time'] > 0]
     for c in use_cols:
-        if df[c].dtype == 'object':
+        if pd.api.types.is_string_dtype(df[c]):
             df[c] = pd.factorize(df[c])[0]
     df['treatment'] = np.random.binomial(1, 0.5, len(df))  # RCT simulation
     df['event'] = df['death'].astype(int)
