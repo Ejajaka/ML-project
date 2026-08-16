@@ -25,3 +25,6 @@ Thumbs.db
 # Editors
 .vscode/
 .idea/
+
+# Author tone file (read by report-author skill)
+.author-tone.md

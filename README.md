@@ -42,9 +42,21 @@ hte_project/
 ├── R/                 # R scripts (grf CSF, rule extraction, GB survival)
 ├── data/              # Dataset files (PBC/SUPPORT/GBSG sources)
 ├── results/           # Output tables and figures
-├── docs/              # Project documentation and weekly reports
+├── deliverables/      # Reports, literature, and lab assignments
+│   ├── weekly-reports/          # Typst reports (weekly + final)
+│   ├── literature/              # Paper PDFs and IEEE survey
+│   └── qn3.typ, qn3.pdf         # Lab assignment (kNN)
 ├── PAPER.md           # Full paper draft (theory + methods + results)
 └── requirements.txt
+```
+
+Weekly reports share one bibliography at `deliverables/weekly-reports/references.bib`.
+Compile them from the repo root with the `--root` flag:
+
+```bash
+typst compile --root deliverables/weekly-reports \
+  deliverables/weekly-reports/2026-08-16/main_report.typ \
+  deliverables/weekly-reports/2026-08-16/main_report.pdf
 ```
 
 ## Quick Start
