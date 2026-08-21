@@ -12,11 +12,13 @@ outcome prediction trees, capturing complementary signals; (ii) **conformalized 
 selection** that replaces the standard Lasso-based rule selection with bootstrap
 aggregation to produce stable, reproducible rule sets; and (iii) **weighted conformal
 prediction intervals** for each rule's CATE that provide finite-sample coverage guarantees
-under censoring. We evaluate CISCaRL against eight competing methods across three
-real-world datasets (PBC, SUPPORT, GBSG) and four data-generating processes (AFT-Gumbel,
-Cox PH, non-PH crossing, nonlinear XOR). CISCaRL consistently ranks among the top
+under censoring. We evaluate CISCaRL against eight competing methods across four
+real-world datasets (PBC, SUPPORT, GBSG, ACTG175) and four data-generating
+processes (AFT-Gumbel, Cox PH, non-PH crossing, nonlinear XOR). CISCaRL
+consistently ranks among the top
 methods in accuracy while being the only method producing a genuinely interpretable
-output: a short list of 7-10 rules with clinical recommendations.
+output: a short list of rules with stability scores, conformal intervals, and
+clinical recommendations.
 
 ---
 
@@ -183,13 +185,19 @@ the rule-level approximation of the CSF surface.
 
 ### 3.1 Datasets
 
-We use three real-world datasets from the survival HTE literature:
+We use four real-world datasets from the survival HTE literature:
 
 | Dataset | n | p | Events | Source |
 |---------|---|----|--------|--------|
 | PBC | 312 | 16 | ~70% | Fleming & Harrington (1991) |
 | SUPPORT | ~4500 | 25 | ~68% | Connors et al. (1995) |
 | GBSG | 686 | 7 | ~57% | Schumacher et al. (1994) |
+| ACTG175 | 2139 | 18 | ~24% | Hammer et al. (1996) |
+
+ACTG175 is a randomized HIV clinical trial and is the standard real-RCT dataset
+used by the survival-RuleFit / SCRE papers (Wan et al., 2022, 2023, 2024;
+Hiraishi et al., 2023) to demonstrate interpretable HTE, so it is the primary
+verification dataset for CISCaRL.
 
 Since ground-truth CATE is unavailable in real data, we follow the semi-synthetic
 evaluation protocol of Bo & Ding (2024): retain real covariates and treatment
@@ -208,26 +216,32 @@ We evaluate under four DGPs:
 
 ### 3.3 Competing Methods
 
-We compare against eight methods:
+We compare against nine methods (CISCaRL in three modes):
 - **Cox T-learner:** Two separate Cox PH models (baseline)
 - **CSF (RF):** Random forest on pseudo-ITE (black-box, accurate)
 - **Bo & Ding (2024):** GBM + Lasso rule selection
 - **Hybrid:** CSF rules + Lasso selection (our prior approach)
 - **CRE:** Causal Rule Ensemble (Bargagli-Stoffi et al., 2020) — RF + ElasticNet
-- **SCRE:** Survival Causal Rule Ensemble (Wan et al., 2024)
+- **SCRE:** Survival Causal Rule Ensemble (Wan et al., 2024) — shared-basis
+  penalized Cox RuleFit (implemented faithfully per arXiv:2309.11914)
 - **CISCaRL-direct:** Our method on raw pseudo-ITE
+- **CISCaRL-auto:** Our method with automatic mode selection
 - **CISCaRL-posthoc:** Our method on CSF CATE surface
 
 ### 3.4 Results
 
-**Full results are in `paper_results_full.csv`**. Key findings:
+**Full results are in `results/paper_results_full.csv`** (committed on this
+branch). Key findings:
 
-**Accuracy (MAE).** CISCaRL (posthoc) ranks 1st or 2nd on all dataset/DGP
-combinations, matching or exceeding the black-box CSF while producing interpretable
-rules. The posthoc mode consistently outperforms the direct mode.
+**Accuracy (MAE).** On the semi-synthetic real-covariate benchmarks CISCaRL
+(posthoc) is competitive with the top black-box methods while producing a short
+interpretable rule list; its MAE is comparable to CSF and substantially better
+than the sparse-rule competitors. Note: the committed CSV is a `--quick` run;
+final numbers should be regenerated with a full run before submission.
 
-**Interpretability.** CISCaRL produces 7-10 rules on average. Competing rule-based
-methods (Bo & Ding, Hybrid, CRE, SCRE) select 100-200+ rules, defeating
+**Interpretability.** CISCaRL produces a handful of rules (single digits, e.g.
+6-10) with stability scores and conformal intervals. Competing rule-based
+methods (Bo & Ding, Hybrid, CRE) select 100-200+ rules, defeating
 interpretability.
 
 **Reliability.** Conformal intervals achieve near-nominal coverage in synthetic

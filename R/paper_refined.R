@@ -109,7 +109,10 @@ bootstrap_select <- function(R, y, n_boot=20, threshold=0.35) {
   for (b in 1:n_boot) {
     idx <- sample(nrow(R_obs), replace=TRUE)
     cv <- tryCatch(cv.glmnet(R_obs[idx,,drop=F], y_obs[idx], alpha=1, nfolds=3), error=function(e) NULL)
-    if (!is.null(cv)) sel[abs(as.vector(coef(cv,s=cv$lambda.1se))[-1]) > 1e-5] <- sel + 1
+    if (!is.null(cv)) {
+      sel_v <- abs(as.vector(coef(cv,s=cv$lambda.1se))[-1]) > 1e-5
+      sel[sel_v] <- sel[sel_v] + 1
+    }
   }
   which(sel / n_boot >= threshold)
 }
@@ -128,11 +131,11 @@ evaluate <- function(pred, true) {
 }
 
 # ================ PART 1: SYNTHETIC SIMULATION ================
+N_REPS <- 20; N <- 1500; P <- 15
 cat("\n", strrep("=",70), "\n", sep="")
-cat("SYNTHETIC SIMULATION (50 reps)\n")
+cat(sprintf("SYNTHETIC SIMULATION (%d reps)\n", N_REPS))
 cat(strrep("=",70), "\n", sep="")
 
-N_REPS <- 20; N <- 1500; P <- 15
 synth_res <- list()
 
 for (rep in 1:N_REPS) {

@@ -90,7 +90,15 @@ for (rep in 1:N_REPS) {
   cate_rf <- predict(rf, data.frame(X_te))
   
   # --- 4. Hybrid: CSF top variables + Lasso ---
-  vi <- tryCatch(variable_importance(csf)[,1], error=function(e) rep(0,P))
+  # grf::variable_importance returns a VECTOR for a single-output causal
+  # survival forest (NOT a matrix). Indexing [,1] always raised an error and
+  # silently fell back to rep(0, P), making top_vars constant 1:5 and defeating
+  # the "hybrid via variable importance" mechanism. Handle both shapes.
+  vi <- tryCatch({
+    v <- variable_importance(csf)
+    if (is.matrix(v)) v[,1] else as.numeric(v)
+  }, error=function(e) rep(0, P))
+  if (length(vi) != P) vi <- rep(0, P)
   top_vars <- order(-vi)[1:min(5, P)]
   X_tr_top <- X_tr[, top_vars, drop=FALSE]
   X_te_top <- X_te[, top_vars, drop=FALSE]

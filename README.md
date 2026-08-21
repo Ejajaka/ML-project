@@ -7,8 +7,8 @@ confidence interval for its conditional average treatment effect (CATE), plus a
 stability score indicating how reliably the rule is rediscovered across
 bootstrap resamples.
 
-This repo compares CISCaRL against 7 competing methods across 3 real-world
-datasets (PBC, SUPPORT, GBSG) and 4 data-generating processes.
+This repo compares CISCaRL against 8 competing methods across 4 real-world
+datasets (PBC, SUPPORT, GBSG, ACTG175) and 4 data-generating processes.
 
 ## Key Ideas
 
@@ -34,13 +34,13 @@ hte_project/
 ├── python/            # All Python source code
 │   ├── cis_carl.py    #   CISCaRL core algorithm
 │   ├── scre.py        #   Survival Causal Rule Ensemble (Wan et al. 2024)
-│   ├── experiments.py #   Full paper experiments (8 methods x 4 DGPs)
+│   ├── experiments.py #   Full paper experiments (9 methods x 4 DGPs x 4 datasets)
 │   ├── run_benchmark.py, cis_carl_demo.py, final_demo.py
 │   ├── main*.py       #   Earlier HTE comparison pipelines
 │   ├── utils.py       #   Pseudo-ITE learners (DR, R, DEA)
-│   └── data.py        #   PBC data loader
+│   └── data.py        #   PBC / ACTG175 data loaders
 ├── R/                 # R scripts (grf CSF, rule extraction, GB survival)
-├── data/              # Dataset files (PBC/SUPPORT/GBSG sources)
+├── data/              # Dataset files (PBC/SUPPORT/GBSG/ACTG175 sources)
 ├── results/           # Output tables and figures
 ├── deliverables/      # Reports, literature, and lab assignments
 │   ├── weekly-reports/          # Typst reports (weekly + final)
@@ -111,6 +111,36 @@ Modes:
 | PBC | [Rdatasets survival](https://raw.githubusercontent.com/vincentarelbundock/Rdatasets/master/csv/survival/pbc.csv) | Fleming & Harrington (1991) |
 | SUPPORT | [HBiostat](https://hbiostat.org/data/repo/support2csv.zip) | Connors et al. (1995) |
 | GBSG | [Rdatasets survival](https://raw.githubusercontent.com/vincentarelbundock/Rdatasets/master/csv/survival/gbsg.csv) | Schumacher et al. (1994) |
+| ACTG175 | `speff2trial` R package (local copy in `data/`) | Hammer et al. (1996); used by the survival-RuleFit/SCRE papers for interpretable HTE |
+
+## Fixes on the `cis-carl` branch
+
+This branch fixes several issues found in a review of the original committed code:
+
+- **Faithful SCRE**: `scre.py` previously fit an RF + ElasticNet on pseudo-ITE,
+  which is *not* the Wan et al. (2024) method. It is now a shared-basis penalized
+  Cox RuleFit: main-effect linear + rule terms and treatment-interaction terms
+  are fitted jointly, and HTE is the survival-probability difference
+  S(t*|x, z=1) - S(t*|x, z=0).
+- **CISCaRL posthoc mode** is now included in the benchmark (was missing from
+  `experiments.py`, despite being the recommended mode in the paper).
+- **All 4 DGPs now run on all real datasets** (previously only DGP 1 ran on
+  real data; the 4 DGP comparison was synthetic-only).
+- **Corrected crossing DGP ground truth**: `dgp_non_ph_crossing` previously set
+  `true_cate` as a function of *treatment assignment* and measured it as a time
+  difference. It is now a closed-form survival-probability difference from a
+  log-logistic shared-basis model, independent of the realized treatment.
+- **Bootstrap multiplicity** in `cis_carl.py` stability selection: bootstrap
+  resampling was collapsed to a boolean mask (turning with-replacement sampling
+  into without-replacement). It now uses per-point multiplicities as
+  `sample_weight`.
+- **R scripts**: fixed crashes/bugs in `clean_run.R` (missing `ap$rules`),
+  `run_boost.R` (unloaded `gbm`), `paper_final.R` (broken
+  `variable_importance` indexing), `complete_pipeline.R` (wrong fallback length
+  in GBSG section), `run_csf_hybrid.R` (off-by-one tree traversal + missing
+  `horizon` argument), and `paper_refined.R` (rep-count header mismatch).
+- **Reproducibility**: `results/paper_results_full.csv` is no longer gitignored,
+  so committed results can be checked.
 
 ## Citation
 

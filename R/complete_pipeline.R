@@ -467,8 +467,8 @@ if (length(gb_rules) > 0) {
     cv <- cv.glmnet(ap$R[1:nrow(X_tr), kk, drop=F], cate_tr, alpha=1, nfolds=5)
     c4 <- as.vector(predict(cv, ap$R[-(1:nrow(X_tr)), kk, drop=F], s="lambda.1se"))
     n4 <- sum(abs(coef(cv, s="lambda.1se")[-1]) > 1e-4)
-  } else { c4 <- rep(0, nrow(df_te)); n4 <- 0 }
-} else { c4 <- rep(0, nrow(df_te)); n4 <- 0 }
+  } else { c4 <- rep(0, nrow(X_te)); n4 <- 0 }
+} else { c4 <- rep(0, nrow(X_te)); n4 <- 0 }
 
 # Hybrid
 csf_rules <- extract_csf_rules(csf)
@@ -479,8 +479,8 @@ if (length(csf_rules) > 0) {
     cv2 <- cv.glmnet(ap2$R[1:nrow(X_tr), kk, drop=F], cate_tr, alpha=1, nfolds=5)
     c5 <- as.vector(predict(cv2, ap2$R[-(1:nrow(X_tr)), kk, drop=F], s="lambda.1se"))
     n5 <- sum(abs(coef(cv2, s="lambda.1se")[-1]) > 1e-4)
-  } else { c5 <- rep(0, nrow(df_te)); n5 <- 0 }
-} else { c5 <- rep(0, nrow(df_te)); n5 <- 0 }
+  } else { c5 <- rep(0, nrow(X_te)); n5 <- 0 }
+} else { c5 <- rep(0, nrow(X_te)); n5 <- 0 }
 
 cat("  Method                    CATE range        Rules\n")
 cat(sprintf("  %-25s [%.3f, %.3f]\n", "CSF (grf)", min(c3), max(c3)))

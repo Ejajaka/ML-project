@@ -1,6 +1,6 @@
 # BOOSTED HYBRID: CSF rules + bootstrap stability + XGBoost
 # New folder, no overwrites. Tests on: synthetic 100 reps + PBC + GBSG
-library(grf); library(glmnet); library(survival); library(xgboost)
+library(grf); library(glmnet); library(survival); library(xgboost); library(gbm)
 set.seed(42); options(warn=-1)
 
 # ===================== HELPERS =====================

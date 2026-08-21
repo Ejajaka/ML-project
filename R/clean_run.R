@@ -35,7 +35,7 @@ extract_gbm_rules <- function(m, X, nt=25) {
   r[!duplicated(sapply(r, `[[`, 'rule'))]
 }
 apply_rules <- function(ru, X, cn, ms=10) {
-  n <- nrow(X); m <- length(ru); if (m==0) return(list(R=matrix(0,n,0)))
+  n <- nrow(X); m <- length(ru); if (m==0) return(list(R=matrix(0,n,0), rules=list()))
   R <- matrix(0,n,m); v <- rep(T,m)
   for (j in 1:m) {
     ma <- rep(T,n)
@@ -46,7 +46,7 @@ apply_rules <- function(ru, X, cn, ms=10) {
     if (v[j]) R[,j] <- as.integer(ma)
   }
   R <- R[,v,drop=F]; k <- colSums(R)>=ms
-  list(R=R[,k,drop=F])
+  list(R=R[,k,drop=F], rules=ru[v][k])
 }
 fit_lasso <- function(X, y, mr=15) {
   if (ncol(X)<2||sum(!is.na(y))<10) return(list(coef=rep(0,max(1,ncol(X))),nr=0,int=0))

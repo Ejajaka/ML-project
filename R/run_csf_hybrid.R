@@ -13,23 +13,31 @@ treatment <- data$treatment
 cat("Data loaded:", nrow(data), "rows,", ncol(X), "covariates\n")
 
 # Fit Causal Survival Forest
+# `horizon` is a REQUIRED argument of grf::causal_survival_forest defining the
+# estimand time point; it was missing here, so the script errored.
+t_star <- median(time[event == 1])
 csf <- causal_survival_forest(
   X = X, Y = time, W = treatment, D = event,
-  num.trees = 500, honesty = TRUE, min.node.size = 5
+  num.trees = 500, honesty = TRUE, min.node.size = 5,
+  horizon = t_star
 )
-cat("CSF fitted\n")
+cat("CSF fitted (horizon t* =", t_star, ")\n")
 
 # Predictions on training data
 cate_train <- predict(csf)$predictions
 cat("Train CATE range:", round(range(cate_train), 4), "\n")
 
 # Extract tree splits (limit to 100 trees)
+# grf tree nodes are 1-BASED: root is nodes[[1]], and left_child/right_child
+# are 1-based indexes into nodes. The previous code used `nodes[[node_id + 1]]`
+# with a 0-based root, which walked one node past each child and hit
+# "subscript out of bounds" on deeper trees.
 all_splits <- data.frame()
 for (i in 1:min(csf$num.trees, 100)) {
   tree <- get_tree(csf, i)
   
   extract_node <- function(node_id, conditions) {
-    node <- tree$nodes[[node_id + 1]]
+    node <- tree$nodes[[node_id]]
     if (node$is_leaf) {
       if (length(conditions) > 0) {
         samples <- node$samples + 1
@@ -55,7 +63,7 @@ for (i in 1:min(csf$num.trees, 100)) {
     extract_node(node$right_child, c(conditions, right_cond))
   }
   
-  extract_node(0, c())
+  extract_node(1, c())
 }
 
 cat("Extracted", nrow(all_splits), "rules\n")

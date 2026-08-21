@@ -336,13 +336,21 @@ class CISCaRL:
         n_train = len(train_idx)
         rng = np.random.RandomState(self.random_state)
 
+        # Bootstrap draws are WITH replacement, so multiplicities matter for a
+        # faithful bootstrap: a point drawn k times should contribute weight k.
+        # Collapsing to a boolean mask (as the original code did) silently turns
+        # bootstrap resampling into sampling-without-replacement, biasing the
+        # stability scores. We instead fit on the full training matrix with
+        # sample_weight = per-point bootstrap multiplicities.
+        R_tr = R[train_idx]
+        y_tr = pseudo_ite[train_idx]
+
         for b in range(self.B):
             boot = rng.choice(n_train, n_train, replace=True)
-            boot_mask = np.zeros(len(pseudo_ite), dtype=bool)
-            boot_mask[train_idx[boot]] = True
+            weights = np.bincount(boot, minlength=n_train).astype(float)
 
             lasso = Lasso(alpha=alpha_fixed, max_iter=10000)
-            lasso.fit(R[boot_mask], pseudo_ite[boot_mask])
+            lasso.fit(R_tr, y_tr, sample_weight=weights)
             selected = np.where(np.abs(lasso.coef_) > 1e-6)[0]
             counts[selected] += 1
 

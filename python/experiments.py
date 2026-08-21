@@ -150,7 +150,20 @@ def dgp_cox_ph(df_raw, covariates, seed=42):
 
 def dgp_non_ph_crossing(df_raw, covariates, seed=42):
     """DGP 3: Non-PH crossing survival curves.
-    Treatment beneficial early but crosses at later time."""
+
+    Log-logistic baseline where treatment changes BOTH the location
+    (tau(x), scale shift) and the shape (rho(x)) parameter. Because the shape
+    differs between arms, the survival curves CROSS: treatment is beneficial
+    early and harmful late (subgroup 1), or harmful early and beneficial late
+    (subgroup 2). This violates the proportional-hazards assumption by design.
+
+    The true CATE is the closed-form survival-probability difference
+        tau(x) = S_1(t*) - S_0(t*) = 1/(1+(t*/lam1)^a1) - 1/(1+(t*/lam0)^a0),
+    which is a counterfactual quantity: it does NOT depend on the realized
+    treatment assignment (fixing the previous mis-specification where
+    true_cate was set to 0 for control patients and measured as a TIME
+    difference rather than a survival-probability difference).
+    """
     np.random.seed(seed)
     n = len(df_raw)
     X = df_raw[covariates].values.astype(float)
@@ -161,34 +174,47 @@ def dgp_non_ph_crossing(df_raw, covariates, seed=42):
     idx = {c: i for i, c in enumerate(covariates)}
     age_i = idx.get('age', 0)
     bili_i = idx.get('bili', min(1, len(covariates)-1))
+    alb_i = idx.get('albumin', idx.get('alb', min(2, len(covariates)-1)))
 
+    # Subgroup 1: beneficial early (positive location shift, flatter shape ->
+    # curves cross late => positive CATE at t*).
+    # Subgroup 2: harmful early (negative shift, steeper shape -> crosses
+    # early => negative CATE at t*).
     sub1 = (X_z[:, age_i] > 0) & (X_z[:, bili_i] > 0)
     sub2 = (X_z[:, age_i] <= 0) & (~sub1)
-    cross_time = 1000.0
 
+    base_log = 6.5 + 0.3*X_z[:, age_i] - 0.2*X_z[:, bili_i] + 0.15*X_z[:, alb_i]
+    alpha0 = 1.5
+    tau = np.where(sub1, 0.6, np.where(sub2, -0.5, 0.0))
+    rho = np.where(sub1, -0.3, np.where(sub2, 0.4, 0.0))
+
+    lam0 = np.exp(base_log)
+    lam1 = np.exp(base_log + tau)
+    a0 = alpha0
+    a1 = alpha0 * (1.0 + rho)
+    a1 = np.maximum(a1, 0.5)
+
+    # Draw potential survival times under BOTH arms (shared U, as in the other
+    # DGPs); observe the arm actually assigned.
     u = np.random.uniform(size=n)
-    base = 500 * (-np.log(u)) ** (-0.5)
-    t_control = base.astype(float)
-    t_cross = base.copy().astype(float)
+    t_control = lam0 * (u / (1.0 - u)) ** (1.0 / a0)
+    t_treated = lam1 * (u / (1.0 - u)) ** (1.0 / a1)
+    t_obs = np.where(treatment == 1, t_treated, t_control)
 
-    # Subgroup 1: early benefit, late crossing
-    t_cross[sub1 & (treatment == 1)] = base[sub1 & (treatment == 1)] * 1.5
-    t_cross[sub1 & (treatment == 1) & (base > cross_time)] = (
-        base[sub1 & (treatment == 1) & (base > cross_time)] * 0.7
-    )
-
-    t_obs = np.where(treatment == 1, t_cross, t_control)
     censor = np.random.exponential(scale=np.median(t_obs)*3, size=n)
     t_final, event = np.minimum(t_obs, censor).astype(float), (t_obs <= censor).astype(int)
     t_star = np.percentile(t_obs[event == 1], 50)
 
-    true_cate = np.where(treatment == 1, t_cross - t_control, 0.0)
-    true_cate = np.clip(true_cate / np.percentile(np.abs(true_cate) + 1, 90), -1, 1)
+    # True CATE: survival-probability difference at t* (closed form).
+    s0 = 1.0 / (1.0 + (t_star / lam0) ** a0)
+    s1 = 1.0 / (1.0 + (t_star / lam1) ** a1)
+    true_cate = s1 - s0
 
     info = {'sub1': sub1.sum(), 'sub2': sub2.sum(),
             'cate_sub1': true_cate[sub1].mean(), 'cate_sub2': true_cate[sub2].mean(),
             'n': n, 'events': event.sum(), 't_star': t_star}
     return t_final, event, treatment, X, covariates, true_cate, info
+
 
 
 def dgp_nonlinear_cate(df_raw, covariates, seed=42):
@@ -402,9 +428,10 @@ def run_single(dataset_name, dgp_name, t_final, event, treatment, X,
             alpha=0.5, pred_n_estimators=200, progn_n_estimators=200,
             rule_min_support=10, max_rules=2000, max_rule_conditions=4)
         scre_model.fit(X_tr, ystar_tr, idx_k, feature_names=covariates,
-                       time=t_tr, event=e_tr.astype(bool))
+                       time=t_tr, event=e_tr.astype(bool), treatment=a_tr)
         results['SCRE'] = scre_model.predict(X_te)
     except Exception as ex:
+        print(f"    [SCRE] failed: {ex}")
         results['SCRE'] = np.zeros(n - n_train)
 
     # ---- 7. CISCaRL (direct) ----
@@ -426,6 +453,16 @@ def run_single(dataset_name, dgp_name, t_final, event, treatment, X,
                     max_selected_rules=10, mode='auto', random_state=42)
     cis_a.fit(X_tr, ystar_tr, idx_k, feature_names=covariates)
     results['CISCaRL (auto)'] = cis_a.predict(X_te)
+
+    # ---- 9. CISCaRL (posthoc, recommended by the paper) ----
+    cis_p = CISCaRL(B=100 if quick else 200, stability_threshold=0.7, alpha=0.10,
+                    csf_n_estimators=200, csf_max_depth=10,
+                    gbm_n_estimators=100, gbm_max_depth=3,
+                    rule_min_support=10, calib_split=0.3,
+                    max_rules=2000, max_rule_conditions=4,
+                    max_selected_rules=10, mode='posthoc', random_state=42)
+    cis_p.fit(X_tr, ystar_tr, idx_k, feature_names=covariates)
+    results['CISCaRL (posthoc)'] = cis_p.predict(X_te)
 
     # Evaluate all
     evals = {}
@@ -451,8 +488,9 @@ def run_single(dataset_name, dgp_name, t_final, event, treatment, X,
     except: evals['CRE']['Rules'] = 0
     try: evals['SCRE']['Rules'] = len(scre_model.selected_rules_)
     except: evals['SCRE']['Rules'] = 0
-    for k in ['CISCaRL (direct)', 'CISCaRL (auto)']:
-        m = cis_d if 'direct' in k else cis_a
+    cis_models = {'CISCaRL (direct)': cis_d, 'CISCaRL (auto)': cis_a,
+                  'CISCaRL (posthoc)': cis_p}
+    for k, m in cis_models.items():
         evals[k]['Rules'] = len(m.selected_rules_)
 
     return evals
@@ -545,44 +583,49 @@ def run_ablations(X_tr, X_te, ystar_tr, idx_k, covariates, quick=False):
 # ============================================================================
 
 def run_all(quick=False):
-    """Run all experiments and return results DataFrame."""
+    """Run all experiments and return results DataFrame.
 
-    datasets = {
-        'PBC': (load_pbc, dgp_aft_gumbel),
-        'SUPPORT': (load_support, dgp_aft_gumbel),
-        'GBSG': (load_gbsg, dgp_aft_gumbel),
-    }
-
-    # Also run synthetic with all 4 DGPs
-    syn_datasets = {
-        'SYNTH-AFT': None,  # Will be generated
+    Full factorial design: 4 real datasets (PBC, SUPPORT, GBSG, ACTG175) x 4
+    DGPs, plus SYNTH-PBC x 4 DGPs for a large-sample synthetic check. Every
+    setting runs all 9 methods (incl. CISCaRL posthoc). Use --quick for a
+    smoke run.
+    """
+    from data import load_actg175
+    loaders = {
+        'PBC': load_pbc,
+        'SUPPORT': load_support,
+        'GBSG': load_gbsg,
+        'ACTG175': load_actg175,
     }
 
     all_rows = []
 
-    # ---- Part 1: Real datasets (DGP 1: AFT-Gumbel) ----
+    # ---- Part 1: Real datasets x all 4 DGPs ----
     print("=" * 70)
-    print("PART 1: REAL DATASETS (AFT-Gumbel DGP)")
+    print("PART 1: REAL DATASETS (all 4 DGPs)")
     print("=" * 70)
 
-    for dname, (loader, dgp_fn) in datasets.items():
-        print(f"\n--- {dname} ---")
+    for dname, loader in loaders.items():
         df_raw, covariates = loader()
-        t_final, event, treatment, X, covs, true_cate, info = dgp_fn(df_raw, covariates)
-        print(f"  n={info['n']}, events={info['events']}, t*={info['t_star']:.1f}")
+        for dgp_name, dgp_fn in DGP_REGISTRY.items():
+            print(f"\n--- {dname} / {dgp_name} ---")
+            np.random.seed(42)
+            t_final, event, treatment, X, covs, true_cate, info = dgp_fn(
+                df_raw, covariates)
+            print(f"  n={info['n']}, events={info['events']}, t*={info['t_star']:.1f}")
 
-        evals = run_single(dname, 'AFT-Gumbel', t_final, event, treatment,
-                           X, covs, true_cate, quick)
+            evals = run_single(dname, dgp_name, t_final, event, treatment,
+                               X, covs, true_cate, quick)
 
-        for mname, e in evals.items():
-            all_rows.append({
-                'Dataset': dname, 'DGP': 'AFT-Gumbel', 'Method': mname,
-                **e
-            })
-            print(f"  {mname:25s}: MAE={e.get('MAE', np.nan):.4f}, "
-                  f"Rules={e.get('Rules', 0)}")
+            for mname, e in evals.items():
+                all_rows.append({
+                    'Dataset': dname, 'DGP': dgp_name, 'Method': mname,
+                    **e
+                })
+                print(f"  {mname:25s}: MAE={e.get('MAE', np.nan):.4f}, "
+                      f"Rules={e.get('Rules', 0)}")
 
-    # ---- Part 2: Synthetic data, all 4 DGPs ----
+    # ---- Part 2: Synthetic data (PBC covariate structure), all 4 DGPs ----
     print(f"\n{'='*70}")
     print("PART 2: SYNTHETIC DATA (ALL 4 DGPs)")
     print("=" * 70)
@@ -678,7 +721,7 @@ def run_all(quick=False):
 
 ALL_METHODS = [
     'Cox T-learner', 'CSF (RF)', 'Bo & Ding', 'Hybrid',
-    'CRE', 'SCRE', 'CISCaRL (direct)', 'CISCaRL (auto)'
+    'CRE', 'SCRE', 'CISCaRL (direct)', 'CISCaRL (auto)', 'CISCaRL (posthoc)'
 ]
 
 
