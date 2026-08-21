@@ -193,6 +193,8 @@ class CISCaRL:
                  max_rules=2000,
                  max_rule_conditions=4,
                  max_selected_rules=10,
+                 min_calib_support=20,
+                 shrinkage=0.5,
                  mode='posthoc',
                  random_state=42):
 
@@ -209,6 +211,8 @@ class CISCaRL:
         self.max_rules = max_rules
         self.max_rule_conditions = max_rule_conditions
         self.max_selected_rules = max_selected_rules
+        self.min_calib_support = min_calib_support
+        self.shrinkage = shrinkage
         self.mode = mode
         self.random_state = random_state
 
@@ -366,9 +370,26 @@ class CISCaRL:
     def _conformal_intervals(self, candidate_rules, selected_idx,
                               pseudo_ite, calib_idx, 
                               ipcw_weights=None):
-        """Compute conformal prediction intervals for selected rules."""
+        """Compute conformal prediction intervals for selected rules.
+
+        Rules with fewer than `min_calib_support` calibration patients are
+        dropped (their point estimates are too noisy and produce extreme,
+        unstable CATEs with very wide intervals). Remaining rule means are
+        shrunk toward the overall calibration mean by a fixed factor
+        (`shrinkage` in [0,1]): weight = n_calib/(n_calib + k), where k is
+        derived so that a rule with min_calib_support patients gets the full
+        `shrinkage` pull. This stabilizes small-subgroup estimates without
+        biasing well-supported rules.
+        """
         results = []
+        kept_idx = []
         any_selected = np.zeros(len(pseudo_ite), dtype=bool)
+
+        calib_all = pseudo_ite[calib_idx]
+        global_mean = np.nanmean(calib_all) if calib_all.size else 0.0
+        # shrinkage weight: k chosen s.t. n_calib=min_calib_support -> pull=shrinkage
+        k = max(self.min_calib_support * (1.0 - self.shrinkage) / max(self.shrinkage, 1e-6), 1e-6)
+        shr = lambda n: n / (n + k)
 
         for idx_in_candidates in selected_idx:
             cond, orig_mask = candidate_rules[idx_in_candidates]
@@ -382,24 +403,22 @@ class CISCaRL:
 
             any_selected |= orig_mask
 
-            if n_calib >= 3:
-                mean_cate = np.mean(calib_cates)
-                nonconf = np.abs(calib_cates - mean_cate)
+            if n_calib < self.min_calib_support:
+                continue
 
-                if calib_w is not None and calib_w.sum() > 0:
-                    q = _weighted_quantile(nonconf, calib_w, 1 - self.alpha)
-                else:
-                    q = np.percentile(nonconf, (1 - self.alpha) * 100)
+            w_shr = shr(n_calib)
+            mean_cate = (1 - w_shr) * np.mean(calib_cates) + w_shr * global_mean
+            nonconf = np.abs(calib_cates - mean_cate)
 
-                ci_low = mean_cate - q
-                ci_high = mean_cate + q
+            if calib_w is not None and calib_w.sum() > 0:
+                q = _weighted_quantile(nonconf, calib_w, 1 - self.alpha)
             else:
-                all_in_rule = pseudo_ite[orig_mask & calib_idx]
-                mean_cate = np.nanmean(all_in_rule) if len(all_in_rule) else 0.0
-                ci_low = mean_cate - 0.15
-                ci_high = mean_cate + 0.15
-                n_calib = len(all_in_rule)
+                q = np.percentile(nonconf, (1 - self.alpha) * 100)
 
+            ci_low = mean_cate - q
+            ci_high = mean_cate + q
+
+            kept_idx.append(idx_in_candidates)
             results.append({
                 'conditions': cond,
                 'condition_str': _conditions_to_str(cond, self.feature_names_),
@@ -435,7 +454,7 @@ class CISCaRL:
             'ci_high': def_ci[1],
             'support': int(default_mask.sum()),
         }
-        return results, default
+        return results, default, kept_idx
 
     # ------------------------------------------------------------------
     # Fit
@@ -585,14 +604,14 @@ class CISCaRL:
 
         # === STAGE 3 ===
         print("  Stage 3: Conformal prediction intervals...")
-        selected_rules, default = self._conformal_intervals(
+        selected_rules, default, kept_idx = self._conformal_intervals(
             candidates, selected_idx,
             target, calib_mask, ipcw_weights
         )
 
         # Attach stability to each selected rule
-        for j, (idx_in_candidates, rule_dict) in enumerate(
-                zip(selected_idx, selected_rules)):
+        for j, idx_in_candidates in enumerate(kept_idx):
+            rule_dict = selected_rules[j]
             rule_dict['stability'] = stability[idx_in_candidates]
             rule_dict['stability_count'] = int(
                 stability[idx_in_candidates] * self.B
