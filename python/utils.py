@@ -2,21 +2,44 @@ import numpy as np
 from sklearn.model_selection import KFold
 
 def compute_ipcw(time, event, treatment, X=None, t_star=None):
-    """Compute Inverse Probability of Censoring Weights."""
+    """Compute Inverse Probability of Censoring Weights.
+
+    Outcome is Y = I(T > t*) with the censoring-adjusted status at t*.
+    The outcome is KNOWN only for patients who were NOT censored before t*:
+      - time > t*              -> alive at t*  (Y = 1)
+      - time <= t* & event == 1 -> died before t* (Y = 0)
+      - time <= t* & event == 0 -> censored before t* (outcome unknown)
+    """
     if t_star is None:
         t_star = np.percentile(time[event == 1], 50)  # median survival
     obs_time = np.minimum(time, t_star)
-    known = time <= t_star  # subjects whose outcome at t* is known
-    
-    # Simple KM-based censoring weight
+    known = (time > t_star) | ((time <= t_star) & (event == 1))
+
+    # KM of the censoring process: treat censoring as the "event".
     from lifelines import KaplanMeierFitter
     kmf = KaplanMeierFitter()
     censored = (event == 0).astype(bool)
-    kmf.fit(time[~censored], event[~censored] == 0)
+    kmf.fit(time, censored)
     surv = kmf.predict(obs_time)
     w_c = 1.0 / np.maximum(surv, 0.01)
-    
+
     return w_c, known, t_star
+
+
+def _outcome_at_tstar(time, event, t_star):
+    """Return (y_obs, known) for Y = I(T > t*).
+
+    y_obs is 1 for patients alive at t* (time > t*), 0 for patients known
+    dead before t* (time <= t* & event == 1). Censored-before-t* patients
+    (time <= t* & event == 0) have an unknown outcome and are excluded via
+    `known`. Previously the code set y_obs = event for time <= t*, which
+    flipped dead patients to 1, and marked censored-before-t* patients as
+    known -- corrupting the pseudo-ITE target.
+    """
+    n = len(time)
+    known = (time > t_star) | ((time <= t_star) & (event == 1))
+    y_obs = (time > t_star).astype(float)
+    return y_obs, known
 
 
 def compute_pseudo_ite_dr(time, event, treatment, X, t_star, 
@@ -24,11 +47,7 @@ def compute_pseudo_ite_dr(time, event, treatment, X, t_star,
     """DR-learner pseudo-ITE."""
     n = len(time)
     obs_time = np.minimum(time, t_star)
-    known = time <= t_star
-    
-    # Observed outcome at t*
-    y_obs = (time > t_star).astype(float)
-    y_obs[time <= t_star] = event[time <= t_star]
+    y_obs, known = _outcome_at_tstar(time, event, t_star)
     
     e_hat = propensity
     mu0 = surv_func_0
@@ -51,10 +70,7 @@ def compute_pseudo_ite_r(time, event, treatment, X, t_star,
                           propensity, surv_func):
     """R-learner pseudo-ITE."""
     n = len(time)
-    known = time <= t_star
-    
-    y_obs = (time > t_star).astype(float)
-    y_obs[time <= t_star] = event[time <= t_star]
+    y_obs, known = _outcome_at_tstar(time, event, t_star)
     
     y_star = np.zeros(n) * np.nan
     for i in range(n):
@@ -71,10 +87,7 @@ def compute_pseudo_ite_r(time, event, treatment, X, t_star,
 def compute_pseudo_ite_dea(time, event, treatment, X, t_star, surv_func):
     """DEA-learner pseudo-ITE (efficiency-augmented D-learner)."""
     n = len(time)
-    known = time <= t_star
-    
-    y_obs = (time > t_star).astype(float)
-    y_obs[time <= t_star] = event[time <= t_star]
+    y_obs, known = _outcome_at_tstar(time, event, t_star)
     
     y_star = np.zeros(n) * np.nan
     for i in range(n):
