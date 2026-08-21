@@ -12,6 +12,7 @@ Usage: python experiments.py [--quick]
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr, gumbel_r
+from sklearn.metrics import r2_score
 import time, os, sys, json
 
 # ============================================================================
@@ -480,11 +481,12 @@ def run_single(dataset_name, dgp_name, t_final, event, treatment, X,
         valid = ~np.isnan(pred)
         p, t = pred[valid], true_te[valid]
         if len(p) < 10:
-            evals[mname] = {'MAE': np.nan, 'RMSE': np.nan, 'Spearman': np.nan, 'Bias': np.nan}
+            evals[mname] = {'MAE': np.nan, 'RMSE': np.nan, 'R2': np.nan, 'Spearman': np.nan, 'Bias': np.nan}
             continue
         evals[mname] = {
             'MAE': float(np.mean(np.abs(p - t))),
             'RMSE': float(np.sqrt(np.mean((p - t)**2))),
+            'R2': float(r2_score(t, p)) if len(np.unique(t)) > 1 else float('nan'),
             'Spearman': float(spearmanr(p, t)[0]) if len(np.unique(t))>1 and len(np.unique(p))>1 else 0.0,
             'Bias': float(np.mean(p - t)),
         }
