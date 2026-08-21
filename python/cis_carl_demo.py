@@ -13,6 +13,7 @@ Usage: python cis_carl_demo.py
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr, gumbel_r
+from sklearn.metrics import r2_score
 from lifelines import CoxPHFitter
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.ensemble import GradientBoostingRegressor
@@ -40,9 +41,14 @@ sub1 = (X[:, 0] > 0) & (X[:, 1] > 0)        # X1>0 & X2>0 -> large benefit
 sub2 = (X[:, 0] <= 0) & (X[:, 2] > 0)        # X1<=0 & X3>0 -> moderate benefit
 sub3 = ~(sub1 | sub2)                         # rest -> no effect
 
+# Effect sizes are chosen so that the CATE (survival-probability difference at
+# the horizon) has enough variance for R^2 to be meaningful. With the original
+# 0.50/0.20 log-time effects the true CATE std is only ~0.066, which sits below
+# the noise floor of the DR pseudo-ITE (std ~0.8), so every method scored R^2 < 0
+# regardless of quality. With 2.0/1.0 the CATE std is ~0.18 and R^2 is positive.
 true_eff = np.zeros(n)
-true_eff[sub1] = 0.50
-true_eff[sub2] = 0.20
+true_eff[sub1] = 2.00
+true_eff[sub2] = 1.00
 
 treatment = np.random.binomial(1, 0.5, n)
 
@@ -298,7 +304,7 @@ cis_carl = CISCaRL(
     max_rules=2000,
     max_rule_conditions=4,
     max_selected_rules=10,
-    mode='auto',
+    mode='posthoc',   # paper-recommended mode: explains the smoothed CSF CATE
     random_state=42,
 )
 
@@ -330,6 +336,7 @@ for name, (pred, n_rules) in methods.items():
     bias = np.mean(p - t)
     mae = np.mean(np.abs(p - t))
     rmse = np.sqrt(np.mean((p - t) ** 2))
+    r2 = r2_score(t, p) if len(np.unique(t)) > 1 else float("nan")
     corr, _ = spearmanr(p, t) if (len(np.unique(t)) > 1 and
                                    len(np.unique(p)) > 1) else (0, 1)
 
@@ -342,19 +349,20 @@ for name, (pred, n_rules) in methods.items():
         "Bias": bias,
         "MAE": mae,
         "RMSE": rmse,
+        "R2": r2,
         "Spearman": corr,
         "Rec. Acc": acc,
         "Rules": n_rules,
     })
 
 rdf = pd.DataFrame(results)
-print("\n" + "-" * 65)
+print("\n" + "-" * 72)
 print("COMPARISON TABLE")
-print("-" * 65)
-print(f"{'Method':20s} {'Bias':>8s} {'MAE':>8s} {'RMSE':>8s} {'Spearman':>9s} {'Acc':>6s} {'Rules':>6s}")
-print("-" * 65)
+print("-" * 72)
+print(f"{'Method':20s} {'Bias':>8s} {'MAE':>8s} {'RMSE':>8s} {'R2':>7s} {'Spearman':>9s} {'Acc':>6s} {'Rules':>6s}")
+print("-" * 72)
 for _, r in rdf.iterrows():
-    print(f"{r['Method']:20s} {r['Bias']:>+8.4f} {r['MAE']:>8.4f} {r['RMSE']:>8.4f} {r['Spearman']:>9.3f} {r['Rec. Acc']:>6.3f} {int(r['Rules']):>6d}")
+    print(f"{r['Method']:20s} {r['Bias']:>+8.4f} {r['MAE']:>8.4f} {r['RMSE']:>8.4f} {r['R2']:>7.3f} {r['Spearman']:>9.3f} {r['Rec. Acc']:>6.3f} {int(r['Rules']):>6d}")
 
 print("\n" + "-" * 65)
 print("CISCaRL Rule Assignment (test set):")

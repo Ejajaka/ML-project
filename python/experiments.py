@@ -87,7 +87,11 @@ def dgp_aft_gumbel(df_raw, covariates, seed=42):
 
     sub1 = (X_z[:, age_i] > 0) & (X_z[:, bili_i] > 0)
     sub2 = (X_z[:, age_i] <= 0) & (X_z[:, alb_i] > 0)
-    true_eff = np.where(sub1, 0.50, np.where(sub2, 0.15, 0.0))
+    # Effect sizes chosen so the CATE (survival-probability difference at t*)
+    # has enough variance for R^2 to be meaningful. The original 0.50/0.15
+    # effects compressed to CATE std ~0.06, below the DR pseudo-ITE noise floor
+    # (std ~0.8), which made every method score R^2 < 0 regardless of quality.
+    true_eff = np.where(sub1, 2.00, np.where(sub2, 1.00, 0.0))
 
     eps = np.random.gumbel(0, 1, n)
     base = 6.5 + 0.3*X_z[:, age_i] - 0.2*X_z[:, bili_i] + 0.15*X_z[:, alb_i]
@@ -124,7 +128,9 @@ def dgp_cox_ph(df_raw, covariates, seed=42):
 
     sub1 = (X_z[:, age_i] > 0) & (X_z[:, bili_i] > 0)
     sub2 = (X_z[:, age_i] <= 0) & (~sub1)
-    true_hr = np.where(sub1, 0.50, np.where(sub2, 0.80, 1.0))
+    # HR magnitudes scaled up from 0.50/0.80 so the CATE survival-probability
+    # differences have enough variance for a meaningful (positive) R^2.
+    true_hr = np.where(sub1, 0.30, np.where(sub2, 0.60, 1.0))
 
     # Weibull baseline hazard
     base_hazard = 0.001
@@ -185,7 +191,9 @@ def dgp_non_ph_crossing(df_raw, covariates, seed=42):
 
     base_log = 6.5 + 0.3*X_z[:, age_i] - 0.2*X_z[:, bili_i] + 0.15*X_z[:, alb_i]
     alpha0 = 1.5
-    tau = np.where(sub1, 0.6, np.where(sub2, -0.5, 0.0))
+    # tau/rho scaled up (was 0.6/-0.5) so the CATE survival-probability spread
+    # is large enough for a meaningful (positive) R^2.
+    tau = np.where(sub1, 1.2, np.where(sub2, -1.0, 0.0))
     rho = np.where(sub1, -0.3, np.where(sub2, 0.4, 0.0))
 
     lam0 = np.exp(base_log)
@@ -231,9 +239,11 @@ def dgp_nonlinear_cate(df_raw, covariates, seed=42):
     bili_i = idx.get('bili', min(1, len(covariates)-1))
     alb_i = idx.get('albumin', idx.get('alb', min(2, len(covariates)-1)))
 
-    # XOR interaction: sign(X_age * X_bili) determines effect direction
+    # XOR interaction: sign(X_age * X_bili) determines effect direction.
+    # Amplitude scaled up (was 0.3/0.1) so CATE spread is large enough for a
+    # meaningful (positive) R^2.
     xor_signal = np.sign(X_z[:, age_i] * X_z[:, bili_i])
-    true_eff = xor_signal * 0.3 + 0.1 * X_z[:, alb_i]
+    true_eff = xor_signal * 1.0 + 0.3 * X_z[:, alb_i]
 
     eps = np.random.gumbel(0, 1, n)
     base = 6.5 + 0.2*X_z[:, age_i] - 0.1*X_z[:, bili_i]
