@@ -72,6 +72,20 @@ def load_gbsg():
 # Data Generating Processes
 # ============================================================================
 
+# Effect-size regime for the semi-synthetic DGPs.
+#   'rescaled' (default): larger effects chosen so CATE std ~0.13-0.32 and R^2
+#       is positive/meaningful on the demo.
+#   'original': the original harder DGP (CATE std ~0.06-0.10), where R^2 is
+#       negative for every method regardless of quality (effect below the DR
+#       pseudo-ITE noise floor). Kept so results can be checked under both.
+EFFECT_REGIME = 'rescaled'
+
+
+def _eff(*vals):
+    """Return (rescaled, original) effect tuple; select by EFFECT_REGIME."""
+    return vals[0] if EFFECT_REGIME == 'rescaled' else vals[1]
+
+
 def dgp_aft_gumbel(df_raw, covariates, seed=42):
     """DGP 1: AFT-Gumbel model (same as existing demo)."""
     np.random.seed(seed)
@@ -88,11 +102,10 @@ def dgp_aft_gumbel(df_raw, covariates, seed=42):
 
     sub1 = (X_z[:, age_i] > 0) & (X_z[:, bili_i] > 0)
     sub2 = (X_z[:, age_i] <= 0) & (X_z[:, alb_i] > 0)
-    # Effect sizes chosen so the CATE (survival-probability difference at t*)
-    # has enough variance for R^2 to be meaningful. The original 0.50/0.15
-    # effects compressed to CATE std ~0.06, below the DR pseudo-ITE noise floor
-    # (std ~0.8), which made every method score R^2 < 0 regardless of quality.
-    true_eff = np.where(sub1, 2.00, np.where(sub2, 1.00, 0.0))
+    # rescaled: 2.00/1.00 so CATE std ~0.18 and R^2 is meaningful;
+    # original (harder): 0.50/0.15 -> CATE std ~0.06, below the DR pseudo-ITE
+    # noise floor (std ~0.8), giving negative R^2 for every method.
+    true_eff = np.where(sub1, _eff(2.00, 0.50), np.where(sub2, _eff(1.00, 0.15), 0.0))
 
     eps = np.random.gumbel(0, 1, n)
     base = 6.5 + 0.3*X_z[:, age_i] - 0.2*X_z[:, bili_i] + 0.15*X_z[:, alb_i]
@@ -129,9 +142,8 @@ def dgp_cox_ph(df_raw, covariates, seed=42):
 
     sub1 = (X_z[:, age_i] > 0) & (X_z[:, bili_i] > 0)
     sub2 = (X_z[:, age_i] <= 0) & (~sub1)
-    # HR magnitudes scaled up from 0.50/0.80 so the CATE survival-probability
-    # differences have enough variance for a meaningful (positive) R^2.
-    true_hr = np.where(sub1, 0.30, np.where(sub2, 0.60, 1.0))
+    # rescaled HR 0.30/0.60 (CATE std ~0.13); original 0.50/0.80 (smaller).
+    true_hr = np.where(sub1, _eff(0.30, 0.50), np.where(sub2, _eff(0.60, 0.80), 1.0))
 
     # Weibull baseline hazard
     base_hazard = 0.001
@@ -192,9 +204,8 @@ def dgp_non_ph_crossing(df_raw, covariates, seed=42):
 
     base_log = 6.5 + 0.3*X_z[:, age_i] - 0.2*X_z[:, bili_i] + 0.15*X_z[:, alb_i]
     alpha0 = 1.5
-    # tau/rho scaled up (was 0.6/-0.5) so the CATE survival-probability spread
-    # is large enough for a meaningful (positive) R^2.
-    tau = np.where(sub1, 1.2, np.where(sub2, -1.0, 0.0))
+    # rescaled tau 1.2/-1.0; original 0.6/-0.5.
+    tau = np.where(sub1, _eff(1.2, 0.6), np.where(sub2, _eff(-1.0, -0.5), 0.0))
     rho = np.where(sub1, -0.3, np.where(sub2, 0.4, 0.0))
 
     lam0 = np.exp(base_log)
@@ -241,10 +252,9 @@ def dgp_nonlinear_cate(df_raw, covariates, seed=42):
     alb_i = idx.get('albumin', idx.get('alb', min(2, len(covariates)-1)))
 
     # XOR interaction: sign(X_age * X_bili) determines effect direction.
-    # Amplitude scaled up (was 0.3/0.1) so CATE spread is large enough for a
-    # meaningful (positive) R^2.
+    # rescaled amplitude 1.0/0.3; original 0.3/0.1.
     xor_signal = np.sign(X_z[:, age_i] * X_z[:, bili_i])
-    true_eff = xor_signal * 1.0 + 0.3 * X_z[:, alb_i]
+    true_eff = xor_signal * _eff(1.0, 0.3) + _eff(0.3, 0.1) * X_z[:, alb_i]
 
     eps = np.random.gumbel(0, 1, n)
     base = 6.5 + 0.2*X_z[:, age_i] - 0.1*X_z[:, bili_i]
