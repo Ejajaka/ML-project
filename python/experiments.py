@@ -491,7 +491,9 @@ def run_single(dataset_name, dgp_name, t_final, event, treatment, X,
         valid = ~np.isnan(pred)
         p, t = pred[valid], true_te[valid]
         if len(p) < 10:
-            evals[mname] = {'MAE': np.nan, 'RMSE': np.nan, 'R2': np.nan, 'Spearman': np.nan, 'Bias': np.nan}
+            evals[mname] = {'MAE': np.nan, 'RMSE': np.nan, 'R2': np.nan, 'Spearman': np.nan,
+                            'Bias': np.nan, 'Acc': np.nan, 'Prec': np.nan, 'Rec': np.nan,
+                            'F1': np.nan, 'AUC': np.nan}
             continue
         evals[mname] = {
             'MAE': float(np.mean(np.abs(p - t))),
@@ -500,6 +502,21 @@ def run_single(dataset_name, dgp_name, t_final, event, treatment, X,
             'Spearman': float(spearmanr(p, t)[0]) if len(np.unique(t))>1 and len(np.unique(p))>1 else 0.0,
             'Bias': float(np.mean(p - t)),
         }
+        # Decision metrics: recommend treat if predicted CATE > 0 vs true CATE > 0
+        from sklearn.metrics import (precision_score, recall_score, f1_score,
+                                     accuracy_score, roc_auc_score)
+        yp = (p > 0).astype(int); yt = (t > 0).astype(int)
+        if len(np.unique(yt)) > 1:
+            evals[mname].update({
+                'Acc': float(accuracy_score(yt, yp)),
+                'Prec': float(precision_score(yt, yp, zero_division=0)),
+                'Rec': float(recall_score(yt, yp, zero_division=0)),
+                'F1': float(f1_score(yt, yp, zero_division=0)),
+                'AUC': float(roc_auc_score(yt, p)) if len(np.unique(p)) > 1 else float('nan'),
+            })
+        else:
+            evals[mname].update({'Acc': np.nan, 'Prec': np.nan, 'Rec': np.nan,
+                                 'F1': np.nan, 'AUC': np.nan})
 
     # Count rules
     try: evals['Bo & Ding']['Rules'] = int(np.sum(np.abs(ls.coef_) > 1e-6)) if r_gb else 0
