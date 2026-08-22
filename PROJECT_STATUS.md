@@ -28,7 +28,24 @@ posthoc modes.
 
 ---
 
-## 2. Effect-size regime: explicit statement
+## 2. Which clinical task each metric maps to
+
+A reader must not assume winning on one metric implies winning on another. The
+metrics answer **different clinical questions**:
+
+| Metric | Clinical question | Type |
+|---|---|---|
+| **MAE / PEHE (RMSE)** | "How large is the effect in this subgroup?" | point estimation |
+| **Spearman / rank** | "Who should get treated *first*?" | prioritization / ranking |
+| **R²** | "How much of the CATE variance is explained?" | absolute fit (weak for CATE) |
+| **Rule count / interpretability** | "Can a clinician understand & act on this?" | decision support |
+
+CISCaRL is strong on **point estimation + interpretability**, and **weak-to-mid
+on ranking**. Both must be stated together.
+
+---
+
+## 3. Effect-size regime: explicit statement
 
 The semi-synthetic DGPs run under **two effect-size regimes**
 (`experiments.EFFECT_REGIME`):
@@ -40,34 +57,34 @@ The semi-synthetic DGPs run under **two effect-size regimes**
   method regardless of quality.
 
 **Both regimes are fully benchmarked** (3 reps × 4 datasets × 4 DGPs each,
-identical splits) and every number below is labeled by regime. Where a single
-number is quoted for both (e.g. "Cox ties, p=0.08 in the harder regime"), the
-regime is stated explicitly.
+identical splits) and every number below is labeled by regime.
 
 ---
 
-## 3. Statistical protocol (all numbers below use this)
+## 4. Statistical protocol
 
 - **48 settings** per regime: 3 reps × 4 datasets × 4 DGPs.
-- **Paired tests** (all methods share the same splits within a rep):
-  paired t-test of MAE differences vs CISCaRL-posthoc.
-- **Multiple-comparison correction:** Holm–Bonferroni across the 8 competitors
-  *within each regime* (family-wise error controlled at α=0.05; 8 tests/regime,
-  16 total). Both raw `p` and corrected `p_holm` are reported.
+- **Paired tests** (all methods share the same splits within a rep): paired
+  t-test of MAE differences vs CISCaRL-posthoc.
+- **Multiple-comparison correction:** Holm–Bonferroni. The **hypothesis family
+  is defined per regime** (8 competitor comparisons each; 16 total across the
+  two regimes, treated as two separate families because the two regimes are
+  reported as independent experiments). FWER controlled at α=0.05 per family.
+  Both raw `p` and corrected `p_holm` are reported.
 - **Effect sizes:** raw MAE gap with 95% CI, plus Cohen's d.
 - **Borderline results** are labeled as such, not flattened into "ties".
 
 ---
 
-## 4. Results
+## 5. Results
 
-### 4.1 Overall MAE (mean ± SE over 48 settings)
+### 5.1 Overall MAE (mean ± SE over 48 settings)
 
 **Original (harder) effects:**
 
 | Rank | Method | MAE ± SE | vs CISCaRL-posthoc (Holm-corrected) |
 |---|---|---|---|
-| 1 | SCRE | 0.090 ± 0.004 | beats it** (gap −0.046, 95% CI [−0.064,−0.029], d=−0.75) |
+| 1 | SCRE | 0.090 ± 0.004 | beats it** (gap −0.046, [−0.064,−0.029], d=−0.75) |
 | 2 | **CISCaRL-posthoc** | **0.137 ± 0.010** | baseline |
 | 3 | Cox | 0.149 ± 0.014 | ns (p=0.31) |
 | 4 | CISCaRL-auto | 0.154 ± 0.012 | worse** (p_holm=0.034) |
@@ -93,77 +110,81 @@ regime is stated explicitly.
 
 **Rules:** CISCaRL 4–6.5; Bo&Ding/Hybrid/CRE 218–704.
 
-### 4.2 Secondary CATE metrics (PEHE = RMSE, Spearman rank)
+### 5.2 Secondary CATE metrics (PEHE = RMSE, Spearman rank)
 
 **Original:** SCRE leads everything (MAE 0.090, RMSE 0.112, Spearman 0.18).
-CISCaRL-posthoc MAE 0.137, RMSE 0.158, Spearman 0.07. Cox/CSF have higher
+CISCaRL-posthoc MAE 0.137, RMSE 0.158, Spearman **0.07**. Cox/CSF have higher
 Spearman (0.11/0.13) but higher MAE.
 
 **Rescaled:** CSF has the best patient ranking (Spearman 0.33); SCRE best MAE
 (0.203). CISCaRL-posthoc Spearman 0.21.
 
 **Ranking wins per setting:** SCRE 6, Cox 5, CSF 2–4, CISCaRL-posthoc 1–2.
-=> **CISCaRL does NOT lead on patient ranking** — only on the interpretability
-vs MAE trade-off. This is stated as a limitation (§6), not hidden.
+=> **CISCaRL does NOT lead on patient ranking.** This is a core limitation (§7).
 
 ---
 
-## 5. The design trade-off (stated up front)
+## 6. The claim — restated correctly (this is the key change)
 
-CISCaRL is **not** the lowest-MAE method (SCRE is) and does **not** have the
-best patient ranking (CSF/SCRE do). Its claim is a deliberate
-**interpretability–accuracy trade-off**:
+The evidence no longer supports an unqualified "CISCaRL is the best
+interpretable method." The honest, defensible claim is **two-part**:
 
-> CISCaRL is the **best method among those that return a genuinely interpretable
-> rule list**, statistically tied with Cox on MAE, and (in the harder DGP)
-> significantly better than the black-box CSF, while the Lasso-based rule
-> methods (Bo&Ding, Hybrid, CRE) that also return rules are 2–3× worse on MAE
-> **and** return 50–100× more rules.
+**Part A — vs the Lasso-based rule methods (Bo&Ding, Hybrid, CRE):**
+CISCaRL is dramatically better (2–3× lower MAE, 50–100× fewer rules,
+statistically significant in both regimes). This is solid and unchanged.
 
-Justification for the accuracy cost vs SCRE:
-- **Clinical trust / auditability**: a 5-rule list with CIs + stability scores is
-  inspectable; SCRE's ~1.3-rule output is effectively a black box.
-- **Regulatory / decision support**: per-subgroup actionable recommendations
-  with finite-sample-valid intervals.
-- SCRE's 1.3 rules ≈ default/none model; CISCaRL commits to a real rule list.
+**Part B — vs SCRE (the harder competitor):**
+SCRE **leads on both MAE (original regime) AND patient ranking**. So CISCaRL is
+**not** "better than SCRE." The correct comparative claim vs SCRE is:
 
-**Counter-evidence to disclose:** on ranking (the clinically most relevant
-quantity), CISCaRL is mid-pack (Spearman ~0.07–0.21 vs SCRE 0.18–0.23, CSF
-0.13–0.33). So the honest claim is "interpretable MAE-competitive," **not**
-"best at ranking who benefits."
+> CISCaRL is **statistically competitive with SCRE on MAE** (SCRE beats it by a
+> small margin, d≈0.4–0.75) **while offering interpretable output SCRE does not
+> provide**: per-rule **conformal (finite-sample-valid) confidence intervals**,
+> per-rule **stability scores**, and explicit **treat / avoid / more-data
+> recommendations**. SCRE returns a weighted coefficient list with no CIs, no
+> stability, no recommendations.
+
+These are CISCaRL's **real differentiators vs SCRE** (verified in code: SCRE has
+no conformal intervals, no stability scores, no recommendations). The rule-count
+contrast with Lasso methods was the weaker selling point; the **conformal-valid
++ stable + actionable per-subgroup output** is the stronger one.
 
 ---
 
-## 6. Known limitations
+## 7. Known limitations (one coherent story)
 
-1. **R² negative on real-covariate data** (original effects): all 9 methods
-   negative; oracle = +0.75–1.00 on the same data → inherent CATE difficulty,
-   not a model defect. R² is reported only under rescaled effects / demo where
-   it is positive (+0.05 to +0.30). PEHE/RMSE/rank are the primary metrics
-   (per Lei & Candès, Kennedy).
-2. **3 reps is thin** — enough for the paired tests (large effects), but SEs on
-   individual numbers are wide; more reps would tighten them.
-3. **SCRE reimplementation**: faithful shared-basis Cox RuleFit, but Wan et al.
+CISCaRL is honest about what it is **not** good at:
+
+1. **Absolute correlation & ranking**: R² is negative on real-covariate data
+   (all 9 methods; oracle = +0.75–1.00, so it's inherent CATE difficulty, not a
+   defect), and CISCaRL is mid-pack on Spearman/rank (0.07–0.21 vs SCRE
+   0.18–0.23, CSF 0.13–0.33). **Together these mean:** CISCaRL should not be the
+   tool of choice for "who benefits most" prioritization or for explaining
+   absolute CATE variance — its value is *interpretable, stable, conformal-valid
+   subgroup point estimates*.
+2. **SCRE leads MAE + ranking**: CISCaRL is competitive, not superior, on
+   accuracy vs SCRE.
+3. **3 reps is thin**: enough for paired tests (large effects), but SEs on
+   individual numbers are wide.
+4. **SCRE reimplementation**: faithful shared-basis Cox RuleFit, but Wan et al.
    use adaptive group-lasso; ours uses elastic-net on the shared-basis design.
-4. **Ranking weakness** (see §5): CISCaRL does not lead Spearman/rank.
 5. **Cox "trend" in rescaled regime**: p=0.083 / p_holm=0.25 — a trend toward
-   CISCaRL being worse, not a flat tie; do not over-claim.
+   CISCaRL being worse, not a flat tie.
 
 ---
 
-## 7. Fixes locked in with tests
+## 8. Fixes locked in with tests
 
 - **grf tree-traversal off-by-one**: `R/test_grf_traversal.R` regression test
   (1-based walk passes; old 0-based walk must fail). Run:
   `Rscript R/test_grf_traversal.R`.
-- **Stale claims removed**: README now says 9 methods × 4 datasets × 4 DGPs
-  (was "8 methods"); verified no remaining "DGP 1 only" text.
-- **Gitignore audited**: only `__pycache__` + runtime artifacts excluded; all
-  data, code, results tracked.
+- **Stale claims removed**: README now says 9 methods × 4 datasets × 4 DGPs;
+  no remaining "DGP 1 only" text.
+- **Gitignore audited**: only `__pycache__` + runtime artifacts excluded.
 
 ---
 
-## 8. How to verify (all committed, nothing pushed)
+## 9. How to verify (all committed, nothing pushed)
 
 ```bash
 cd python
