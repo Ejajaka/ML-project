@@ -28,138 +28,150 @@ posthoc modes.
 
 ---
 
-## 2. Effect-size regime: an explicit statement (was ambiguous before)
+## 2. Effect-size regime: explicit statement
 
-The semi-synthetic DGPs can run under **two effect-size regimes** (selected by
-`experiments.EFFECT_REGIME`):
+The semi-synthetic DGPs run under **two effect-size regimes**
+(`experiments.EFFECT_REGIME`):
 
-- **`rescaled`** (default): larger effects chosen so CATE std ~0.13–0.32, making
-  R² positive/meaningful on the demo.
+- **`rescaled`** (default): larger effects so CATE std ~0.13–0.32, giving
+  positive/meaningful R² on the demo.
 - **`original`** (harder): the original small effects (CATE std ~0.06–0.10),
-  which sit below the DR pseudo-ITE noise floor (std ~0.8) and give negative R²
-  for *every* method regardless of quality.
+  below the DR pseudo-ITE noise floor (std ~0.8), giving negative R² for every
+  method regardless of quality.
 
 **Both regimes are fully benchmarked** (3 reps × 4 datasets × 4 DGPs each,
-identical splits), and the headline result holds in both — see §4.
+identical splits) and every number below is labeled by regime. Where a single
+number is quoted for both (e.g. "Cox ties, p=0.08 in the harder regime"), the
+regime is stated explicitly.
 
 ---
 
-## 3. What was fixed in the codebase
+## 3. Statistical protocol (all numbers below use this)
 
-1. **Pseudo-ITE outcome bug** (`utils.py`): `Y = I(T>t*)` mis-coded died/censored
-   patients; corrupted the target for all pseudo-ITE methods.
-2. **Faithful SCRE** (`scre.py`): was RF+ElasticNet; now the real shared-basis
-   penalized Cox RuleFit (arXiv:2309.11914).
-3. **Bootstrap multiplicity bug** (`cis_carl.py`): with-replacement resampling
-   was collapsed to a boolean mask.
-4. **Rule stabilization**: min-calibration-support + shrinkage toward the global
-   mean removes unstable tiny-subgroup extreme rules.
-5. **Crossing-DGP ground truth**: now a closed-form survival-probability
-   difference, not a function of treatment assignment.
-6. **Posthoc mode + all-4-DGPs-on-real-data** added to the benchmark.
-7. **R scripts**: 6 crash/silent bugs fixed (incl. grf tree-traversal off-by-one).
-8. **Reproducibility**: `paper_results_full.csv`, `fair_benchmark.csv`,
-   `fair_benchmark_original.csv` all committed; gitignore audited (only
-   `__pycache__` and runtime artifacts excluded).
+- **48 settings** per regime: 3 reps × 4 datasets × 4 DGPs.
+- **Paired tests** (all methods share the same splits within a rep):
+  paired t-test of MAE differences vs CISCaRL-posthoc.
+- **Multiple-comparison correction:** Holm–Bonferroni across the 8 competitors
+  *within each regime* (family-wise error controlled at α=0.05; 8 tests/regime,
+  16 total). Both raw `p` and corrected `p_holm` are reported.
+- **Effect sizes:** raw MAE gap with 95% CI, plus Cohen's d.
+- **Borderline results** are labeled as such, not flattened into "ties".
 
 ---
 
-## 4. Results — both regimes, with variance and significance
+## 4. Results
 
-### Overall MAE (mean ± SE over 3 reps × 4 datasets × 4 DGPs = 48 settings)
+### 4.1 Overall MAE (mean ± SE over 48 settings)
 
 **Original (harder) effects:**
 
-| Rank | Method | MAE ± SE | Paired test vs CISCaRL-posthoc |
+| Rank | Method | MAE ± SE | vs CISCaRL-posthoc (Holm-corrected) |
 |---|---|---|---|
-| 1 | SCRE | 0.090 ± 0.004 | beats CISCaRL** (p<0.0001) |
-| 2 | **CISCaRL-posthoc** | **0.137 ± 0.010** | (baseline) |
+| 1 | SCRE | 0.090 ± 0.004 | beats it** (gap −0.046, 95% CI [−0.064,−0.029], d=−0.75) |
+| 2 | **CISCaRL-posthoc** | **0.137 ± 0.010** | baseline |
 | 3 | Cox | 0.149 ± 0.014 | ns (p=0.31) |
-| 4 | CISCaRL-auto | 0.154 ± 0.012 | worse** (p=0.011) |
-| 5 | CISCaRL-dir | 0.160 ± 0.012 | worse** (p=0.015) |
-| 6 | CSF | 0.168 ± 0.010 | worse** (p<0.0001) |
+| 4 | CISCaRL-auto | 0.154 ± 0.012 | worse** (p_holm=0.034) |
+| 5 | CISCaRL-dir | 0.160 ± 0.012 | worse** (p_holm=0.030) |
+| 6 | CSF | 0.168 ± 0.010 | worse** (gap +0.031, [0.020,0.043], d=+0.76) |
 | 7 | Hybrid | 0.364 ± 0.013 | worse** |
 | 8 | CRE | 0.366 ± 0.012 | worse** |
 | 9 | Bo & Ding | 0.408 ± 0.017 | worse** |
 
 **Rescaled effects:**
 
-| Rank | Method | MAE ± SE | Paired test vs CISCaRL-posthoc |
+| Rank | Method | MAE ± SE | vs CISCaRL-posthoc (Holm-corrected) |
 |---|---|---|---|
-| 1 | SCRE | 0.203 ± 0.010 | beats CISCaRL** (p=0.012) |
-| 2 | Cox | 0.229 ± 0.019 | ns (p=0.083) |
-| 3 | CSF | 0.229 ± 0.021 | beats CISCaRL** (p=0.003) |
-| 4 | **CISCaRL-posthoc** | **0.251 ± 0.019** | (baseline) |
+| 1 | SCRE | 0.203 ± 0.010 | beats it** (gap −0.048, [−0.083,−0.012], d=−0.38) |
+| 2 | Cox | 0.229 ± 0.019 | **trend, not significant** (p=0.083, p_holm=0.25) |
+| 3 | CSF | 0.229 ± 0.021 | beats it** (gap −0.022, [−0.035,−0.008], d=−0.46) |
+| 4 | **CISCaRL-posthoc** | **0.251 ± 0.019** | baseline |
 | 5 | CISCaRL-auto | 0.256 ± 0.017 | ns |
 | 6 | CISCaRL-dir | 0.262 ± 0.018 | ns |
 | 7 | CRE | 0.383 ± 0.017 | worse** |
 | 8 | Hybrid | 0.387 ± 0.018 | worse** |
 | 9 | Bo & Ding | 0.427 ± 0.020 | worse** |
 
-**Rules (both regimes):** CISCaRL 4–6.5; Bo&Ding/Hybrid/CRE 218–704.
+**Rules:** CISCaRL 4–6.5; Bo&Ding/Hybrid/CRE 218–704.
 
-### Key findings
+### 4.2 Secondary CATE metrics (PEHE = RMSE, Spearman rank)
 
-- **The interpretability-accuracy claim is robust**: in the original (harder)
-  regime CISCaRL-posthoc is **#2 overall**, **significantly beats CSF**, **ties
-  Cox**, and **significantly beats all Lasso-based rule methods**. Only SCRE
-  beats it. This is *stronger* than the rescaled regime, not weaker.
-- **Statistical tests are paired** (all methods share the same splits), so the
-  comparisons are valid.
+**Original:** SCRE leads everything (MAE 0.090, RMSE 0.112, Spearman 0.18).
+CISCaRL-posthoc MAE 0.137, RMSE 0.158, Spearman 0.07. Cox/CSF have higher
+Spearman (0.11/0.13) but higher MAE.
+
+**Rescaled:** CSF has the best patient ranking (Spearman 0.33); SCRE best MAE
+(0.203). CISCaRL-posthoc Spearman 0.21.
+
+**Ranking wins per setting:** SCRE 6, Cox 5, CSF 2–4, CISCaRL-posthoc 1–2.
+=> **CISCaRL does NOT lead on patient ranking** — only on the interpretability
+vs MAE trade-off. This is stated as a limitation (§6), not hidden.
 
 ---
 
-## 5. The design trade-off — stated explicitly up front
+## 5. The design trade-off (stated up front)
 
-CISCaRL is **not** the lowest-MAE method (SCRE is, and Cox/CSF are comparable).
-The project's claim is a **deliberate interpretability–accuracy trade-off**:
+CISCaRL is **not** the lowest-MAE method (SCRE is) and does **not** have the
+best patient ranking (CSF/SCRE do). Its claim is a deliberate
+**interpretability–accuracy trade-off**:
 
 > CISCaRL is the **best method among those that return a genuinely interpretable
-> rule list**, at MAE statistically indistinguishable from Cox and better than
-> CSF under the harder DGP, while the Lasso-based rule methods (Bo&Ding, Hybrid,
-> CRE) that also return rules are 2–3× worse on MAE **and** return 50–100× more
-> rules.
+> rule list**, statistically tied with Cox on MAE, and (in the harder DGP)
+> significantly better than the black-box CSF, while the Lasso-based rule
+> methods (Bo&Ding, Hybrid, CRE) that also return rules are 2–3× worse on MAE
+> **and** return 50–100× more rules.
 
-Justification for paying the (small) accuracy cost vs SCRE:
-- **Clinical trust / auditability**: a 5-rule list with CIs and stability scores
-  is inspectable and defensible; SCRE's ~1.3 rules is effectively a black box.
+Justification for the accuracy cost vs SCRE:
+- **Clinical trust / auditability**: a 5-rule list with CIs + stability scores is
+  inspectable; SCRE's ~1.3-rule output is effectively a black box.
 - **Regulatory / decision support**: per-subgroup actionable recommendations
   with finite-sample-valid intervals.
-- **SCRE trades interpretability for accuracy** (its 1.3-rule output is nearly
-  a default/none model); CISCaRL commits to a rule list.
+- SCRE's 1.3 rules ≈ default/none model; CISCaRL commits to a real rule list.
 
-This framing should be the first thing stated, not implied by a ranking table.
+**Counter-evidence to disclose:** on ranking (the clinically most relevant
+quantity), CISCaRL is mid-pack (Spearman ~0.07–0.21 vs SCRE 0.18–0.23, CSF
+0.13–0.33). So the honest claim is "interpretable MAE-competitive," **not**
+"best at ranking who benefits."
 
 ---
 
-## 6. Honest caveats
+## 6. Known limitations
 
-1. **Negative R² on real-covariate data**: all 9 methods get negative R² under
-   original effects; an oracle (perfect subgroup model) scores +0.75–1.00 on the
-   same data. So negative R² = inherent difficulty of CATE on real data, not a
-   model defect. CATE papers use PEHE/RMSE/rank as primary metrics for this
-   reason. R² is only reported under rescaled effects / on the demo, where it is
-   positive (+0.05 to +0.30).
-2. **3 reps is thin**: enough for the paired tests above (which found strong
-   effects), but CIs on individual numbers are wide. More reps would tighten
-   SEs.
+1. **R² negative on real-covariate data** (original effects): all 9 methods
+   negative; oracle = +0.75–1.00 on the same data → inherent CATE difficulty,
+   not a model defect. R² is reported only under rescaled effects / demo where
+   it is positive (+0.05 to +0.30). PEHE/RMSE/rank are the primary metrics
+   (per Lei & Candès, Kennedy).
+2. **3 reps is thin** — enough for the paired tests (large effects), but SEs on
+   individual numbers are wide; more reps would tighten them.
 3. **SCRE reimplementation**: faithful shared-basis Cox RuleFit, but Wan et al.
-   use adaptive group-lasso; our version uses elastic-net on the shared-basis
-   design. A reviewer may want the exact group-lasso variant.
+   use adaptive group-lasso; ours uses elastic-net on the shared-basis design.
+4. **Ranking weakness** (see §5): CISCaRL does not lead Spearman/rank.
+5. **Cox "trend" in rescaled regime**: p=0.083 / p_holm=0.25 — a trend toward
+   CISCaRL being worse, not a flat tie; do not over-claim.
 
 ---
 
-## 7. How to verify (all committed, nothing pushed)
+## 7. Fixes locked in with tests
+
+- **grf tree-traversal off-by-one**: `R/test_grf_traversal.R` regression test
+  (1-based walk passes; old 0-based walk must fail). Run:
+  `Rscript R/test_grf_traversal.R`.
+- **Stale claims removed**: README now says 9 methods × 4 datasets × 4 DGPs
+  (was "8 methods"); verified no remaining "DGP 1 only" text.
+- **Gitignore audited**: only `__pycache__` + runtime artifacts excluded; all
+  data, code, results tracked.
+
+---
+
+## 8. How to verify (all committed, nothing pushed)
 
 ```bash
-# Fair benchmark, both regimes (3 reps each, ~2h each)
 cd python
-python fair_benchmark.py --quick --reps 3 --regime original
-python fair_benchmark.py --quick --reps 3 --regime rescaled
-
-# Demo with R² (synthetic, known CATE)
-python cis_carl_demo.py
+python fair_benchmark.py --quick --reps 3 --regime original   # ~2h
+python fair_benchmark.py --quick --reps 3 --regime rescaled   # ~2h
+python cis_carl_demo.py                                       # demo + R²
+Rscript ../R/test_grf_traversal.R                             # regression test
 ```
 
-Results already in `results/`: `fair_benchmark.csv` (rescaled),
+Results in `results/`: `fair_benchmark.csv` (rescaled),
 `fair_benchmark_original.csv` (original), `paper_results_full.csv`.

@@ -72,9 +72,13 @@ python cis_carl_demo.py
 # Run the 3-dataset benchmark
 python run_benchmark.py
 
-# Run full paper experiments (8 methods x 4 DGPs)
+# Run full paper experiments (9 methods x 4 datasets x 4 DGPs)
 python experiments.py          # full run
 python experiments.py --quick  # reduced bootstraps for a quick check
+
+# Fair benchmark (all methods, identical splits, N reps; either effect regime)
+python fair_benchmark.py --quick --reps 3 --regime original
+python fair_benchmark.py --quick --reps 3 --regime rescaled
 ```
 
 ### R dependency
