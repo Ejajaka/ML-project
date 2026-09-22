@@ -106,6 +106,13 @@ Verify:
 python -c "import numpy, pandas, scipy, sklearn, lifelines, sksurv; print('ok')"
 ```
 
+> **Interpreter gotcha (Windows).** If you have multiple Pythons installed,
+> the bare `python` command may point to an install *without* the packages.
+> Check with `python -c "import sksurv"`. If it fails, use `py -3.13`
+> (or whichever interpreter has the packages) for every command below:
+> `py -3.13 run_all.py`. To install into a specific interpreter:
+> `py -3.13 -m pip install -r requirements.txt`.
+
 ### 3.2 R (needed for the CSF bridge and the regression test)
 
 `grf` is required. It may not be in a writable system library, so install to a
@@ -152,6 +159,27 @@ python data.py
 ## 5. Run everything (step by step)
 
 All commands are run from the `python/` directory unless noted.
+
+### 5.0 ONE-FILE DEMO (run this to show everything)
+
+If you only want a single command that demonstrates the whole project:
+
+```bash
+py -3.13 run_all.py
+```
+
+This runs six steps and prints a PASS/FAIL summary:
+
+1. Loads the datasets (ACTG175 is local; PBC skips gracefully if offline).
+2. Synthetic example with known effect — shows CISCaRL gets low error **with**
+   a short rule list (Bo & Ding needs ~300 rules; the black-box CSF has none).
+3. Fits CISCaRL on the **real** ACTG175 trial and prints the interpretable
+   rule list (CATEs, 90% intervals, stability, recommendations).
+4. Measures empirical coverage of the 90% conformal intervals.
+5. Prints the headline benchmark tables (read from committed `results/`).
+6. Runs the R grf regression test.
+
+Runtime ≈ 2–3 minutes. This is the recommended demonstration for a live review.
 
 ### 5.1 Demo — synthetic, known CATE (≈5–10 min)
 
