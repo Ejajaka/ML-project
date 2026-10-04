@@ -1,0 +1,22 @@
+# Build context exclusions for the HF Spaces image
+.git
+.github
+**/__pycache__/
+*.pyc
+.venv
+venv
+env
+node_modules
+
+# Not needed at runtime
+deliverables/
+data/support2.csv
+data/support2csv.zip
+data/support_clean.csv
+results/paper_final_results.csv
+results/paper_results.csv
+results/paper_results_full.csv
+results/simulation_results.csv
+results/fair_benchmark.csv
+results/fair_benchmark_rescaled.csv
+results/results_plot.pdf
