@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CISCaRL Live — Interpretable Survival Treatment Effects</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+<div class="bg-orbs"></div>
+
+<header class="hero">
+  <div class="badge">CISCaRL</div>
+  <h1>Interpretable Survival Treatment Effects <span class="grad">Live</span></h1>
+  <p class="sub">Enter a patient · run every method · read the rules</p>
+  <div class="chips">
+    <span class="chip">Real RCT: ACTG175</span>
+    <span class="chip">Conformal 90% intervals</span>
+    <span class="chip">9 methods compared</span>
+    <span class="chip warn">Illustrative · not clinical</span>
+  </div>
+</header>
+
+<main>
+  <section class="panel controls">
+    <button id="btnDemo" class="btn ghost" type="button">⚡ Load demo patient</button>
+    <button id="btnRun" class="btn primary" type="button">▶ Run all methods</button>
+    <span id="apiStatus" class="api-status">connecting…</span>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>Patient details <small>baseline covariates</small></h2>
+      <div id="form" class="form-grid"></div>
+    </div>
+    <div class="panel">
+      <h2>CISCaRL result <small>the interpretable output</small></h2>
+      <div id="cisResult" class="cis-hero"><div class="note">Load a demo patient or type values, then click <b>Run all methods</b>.</div></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Model predictions <small>predicted CATE (survival-probability difference) at t*</small></h2>
+    <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    <div id="predCards" class="pred-cards"></div>
+  </section>
+
+  <section class="panel">
+    <h2>The rules <small>every method's discovered rules — our main asset</small></h2>
+    <div id="ruleTabs" class="tabs"></div>
+    <div id="ruleBody" class="rule-body"><div class="note">loading…</div></div>
+  </section>
+
+  <section class="panel">
+    <h2>Accuracy <small>semi-synthetic ACTG175 benchmark · original regime · mean over 48 settings</small></h2>
+    <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+    <div class="table-wrap"><table id="metricTable"></table></div>
+    <div class="note">Green cell = best method for that metric. Accuracy is measured on the benchmark, not on the entered patient.</div>
+  </section>
+
+  <footer>
+    <p>CISCaRL · explainability is the asset · predictions are <b>group-level</b> effects from a real RCT, for demonstration only.</p>
+  </footer>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "n": 2139,
+    "n_events": 521,
+    "n_treated": 1607,
+    "train": 1497,
+    "test": 642
+  },
+  "t_star": 582.0,
+  "features": [
+    "age",
+    "wtkg",
+    "hemo",
+    "homo",
+    "drugs",
+    "karnof",
+    "oprior",
+    "z30",
+    "zprior",
+    "preanti",
+    "race",
+    "gender",
+    "str2",
+    "strat",
+    "symptom",
+    "cd40",
+    "cd80",
+    "arms"
+  ],
+  "rule_counts": {
+    "CISCaRL": 7,
+    "SCRE": 1,
+    "Bo & Ding": 161,
+    "Hybrid": 538,
+    "CRE": 1474,
+    "CSF (black-box)": 0,
+    "Cox T-learner": 0
+  },
+  "demo_patient": {
+    "age": 32.0,
+    "wtkg": 85.8,
+    "hemo": 0.0,
+    "homo": 1.0,
+    "drugs": 0.0,
+    "karnof": 80.0,
+    "oprior": 0.0,
+    "z30": 1.0,
+    "zprior": 1.0,
+    "preanti": 1116.0,
+    "race": 0.0,
+    "gender": 1.0,
+    "str2": 1.0,
+    "strat": 3.0,
+    "symptom": 0.0,
+    "cd40": 270.0,
+    "cd80": 740.0,
+    "arms": 3.0
+  }
+}
