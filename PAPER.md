@@ -122,6 +122,19 @@ removing unstable tiny-subgroup estimates.
 
 ## 3. Experiments
 
+### 3.0 Why semi-synthetic data?
+
+Accuracy metrics (MAE, RMSE, conformal coverage, ranking) are defined against the
+*true* CATE, which is unobservable in real data: for any patient we see only one
+potential outcome, never both. We therefore follow the standard evaluation
+protocol of the survival-HTE literature (Cui & Kosorok 2023; Bo & Ding 2024;
+Wan et al. SCRE; SurvHTE-Bench): keep the **real covariates** and, for ACTG175,
+the **real randomized treatment assignment**, and **simulate the time-to-event
+outcome** from a known model so the true CATE exists. This isolates *method*
+error from the absence of ground truth. Real-outcome data is used separately for
+the clinical-plausibility showcase (Section 3.4). All reported accuracy numbers
+are from this semi-synthetic protocol.
+
 ### 3.1 Protocol (fair comparison)
 
 - **Datasets**: PBC, SUPPORT, GBSG, ACTG175 (real RCT).
@@ -208,6 +221,12 @@ finding in itself.
 5. **R2**: negative for all methods on real-covariate data; a perfect-subgroup
    oracle scores +0.75-1.00, so this reflects inherent CATE difficulty, not a
    method defect. PEHE/RMSE/rank are the primary metrics.
+6. **Semi-synthetic scope**: all accuracy numbers come from the semi-synthetic
+   protocol (Section 3.0); the real-ACTG175 results (Section 3.4) are a
+   plausibility showcase, not an accuracy benchmark.
+7. **Cox baseline**: each treatment arm is fit with constant covariates dropped
+   and a small ridge penalty; the original unpenalized fit did not converge on
+   ACTG175's constant `zprior` column.
 
 ---
 
