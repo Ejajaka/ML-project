@@ -209,10 +209,12 @@ def fit_engine():
                            "coef": float(r["coef"])})
 
     # ---- CISCaRL (posthoc) ----
-    cis = CISCaRL(B=200, stability_threshold=0.7, alpha=0.10,
-                  csf_n_estimators=200, csf_max_depth=10, gbm_n_estimators=100,
+    # Tuned for rule COVERAGE so arbitrary patient inputs usually land in a rule
+    # (more rules, lower stability bar, <=3 conditions => broader rules).
+    cis = CISCaRL(B=200, stability_threshold=0.6, alpha=0.10,
+                  csf_n_estimators=300, csf_max_depth=10, gbm_n_estimators=150,
                   gbm_max_depth=3, rule_min_support=10, calib_split=0.3,
-                  max_rules=2000, max_rule_conditions=4, max_selected_rules=10,
+                  max_rules=3000, max_rule_conditions=3, max_selected_rules=25,
                   min_calib_support=5, shrinkage=0.5, mode="posthoc",
                   random_state=RANDOM_STATE)
     cis.fit(X_tr, ystar, idx_k, feature_names=covs)

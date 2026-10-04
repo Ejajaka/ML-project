@@ -28,7 +28,7 @@
     "arms"
   ],
   "rule_counts": {
-    "CISCaRL": 7,
+    "CISCaRL": 14,
     "SCRE": 1,
     "Bo & Ding": 161,
     "Hybrid": 538,
@@ -37,23 +37,23 @@
     "Cox T-learner": 0
   },
   "demo_patient": {
-    "age": 32.0,
-    "wtkg": 85.8,
+    "age": 29.0,
+    "wtkg": 81.4212,
     "hemo": 0.0,
     "homo": 1.0,
     "drugs": 0.0,
-    "karnof": 80.0,
+    "karnof": 100.0,
     "oprior": 0.0,
-    "z30": 1.0,
+    "z30": 0.0,
     "zprior": 1.0,
-    "preanti": 1116.0,
+    "preanti": 0.0,
     "race": 0.0,
     "gender": 1.0,
-    "str2": 1.0,
-    "strat": 3.0,
+    "str2": 0.0,
+    "strat": 1.0,
     "symptom": 0.0,
-    "cd40": 270.0,
-    "cd80": 740.0,
-    "arms": 3.0
+    "cd40": 356.0,
+    "cd80": 828.0,
+    "arms": 0.0
   }
 }
