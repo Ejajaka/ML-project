@@ -59,7 +59,7 @@ def meta():
         "ranges": e["ranges"],
         "demo_patient": e["demo_patient"],
         "t_star": e["t_star"],
-        "dataset": "ACTG175 (Hammer et al. 1996) - real randomized HIV trial",
+        "dataset": "ACTG175 covariates + simulated outcome (rescaled regime; demonstration)",
         "meta": e["meta"],
     }
 
