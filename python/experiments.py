@@ -26,6 +26,7 @@ from sksurv.ensemble import RandomSurvivalForest
 from utils import compute_pseudo_ite_dr
 from cis_carl import CISCaRL
 from scre import SurvivalCausalRuleEnsemble
+import pipeline
 
 
 # ============================================================================
@@ -315,9 +316,10 @@ def rules_from_ens(ens, X, mt=200):
 # Single Run
 # ============================================================================
 
-def run_single(dataset_name, dgp_name, t_final, event, treatment, X,
-               covariates, true_cate, quick=False):
-    """Run all methods on one dataset/DGP combination."""
+def _run_single_legacy(dataset_name, dgp_name, t_final, event, treatment, X,
+                       covariates, true_cate, quick=False):
+    """Legacy implementation (kept for reference). The active run_single below
+    delegates to the shared pipeline so offline == website."""
     n = len(X)
 
     # Train/test split
@@ -532,6 +534,34 @@ def run_single(dataset_name, dgp_name, t_final, event, treatment, X,
     for k, m in cis_models.items():
         evals[k]['Rules'] = len(m.selected_rules_)
 
+    return evals
+
+
+# ============================================================================
+# Single Run (shared pipeline -- single source of truth for offline + webapp)
+# ============================================================================
+
+def run_single(dataset_name, dgp_name, t_final, event, treatment, X,
+               covariates, true_cate, quick=False):
+    """Run all methods via the shared pipeline (so offline == website)."""
+    n = len(X)
+    idx = np.random.permutation(n)
+    n_train = int(n * 0.7)
+    train_i, test_i = idx[:n_train], idx[n_train:]
+    X_tr, X_te = X[train_i], X[test_i]
+    a_tr = treatment[train_i]
+    t_tr = t_final[train_i]
+    e_tr = event[train_i].astype(int)
+    true_te = true_cate[test_i]
+
+    models, preds = pipeline.fit_all(X_tr, t_tr, e_tr, a_tr, covariates, X_te, quick)
+    evals = pipeline.evaluate(preds, true_te, models)
+
+    empty = {'MAE': np.nan, 'RMSE': np.nan, 'R2': np.nan, 'Spearman': np.nan,
+             'Bias': np.nan, 'Acc': np.nan, 'Prec': np.nan, 'Rec': np.nan,
+             'F1': np.nan, 'AUC': np.nan, 'Rules': 0}
+    for m in ALL_METHODS:
+        evals.setdefault(m, dict(empty))
     return evals
 
 

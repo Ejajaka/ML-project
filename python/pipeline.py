@@ -92,23 +92,35 @@ def fit_all(X_tr, t_tr, e_tr, a_tr, covariates, X_te, quick=False):
     t_star = max(t_star, 1)
     preds, models = {}, {'t_star': float(t_star), 'covariates': list(covariates)}
 
-    # 1. Cox T-learner
+    # 1. Cox T-learner (per-arm: drop constant cols, escalating ridge)
     try:
         df_tr = pd.DataFrame(X_tr, columns=covariates)
         df_tr['time'], df_tr['event'], df_tr['treatment'] = t_tr, e_tr, a_tr
         df_te = pd.DataFrame(X_te, columns=covariates)
-        df_te['time'] = np.zeros(nte); df_te['event'] = np.zeros(nte); df_te['treatment'] = np.zeros(nte)
-        cph_t = CoxPHFitter().fit(df_tr[df_tr['treatment'] == 1].drop(columns='treatment'), 'time', 'event')
-        cph_c = CoxPHFitter().fit(df_tr[df_tr['treatment'] == 0].drop(columns='treatment'), 'time', 'event')
-        sf_t = cph_t.predict_survival_function(df_te.drop(columns='treatment'))
-        sf_c = cph_c.predict_survival_function(df_te.drop(columns='treatment'))
-        tt = sf_t.index.values.astype(float); tc = sf_c.index.values.astype(float)
-        s_t = np.array([np.interp(float(t_star), tt, sf_t[i].values.astype(float)) for i in df_te.index])
-        s_c = np.array([np.interp(float(t_star), tc, sf_c[i].values.astype(float)) for i in df_te.index])
-        preds['Cox T-learner'] = s_t - s_c
+
+        def _cox_arm(mask):
+            sub = df_tr[mask]
+            k = [c for c in covariates if sub[c].std() > 1e-8]
+            last = None
+            for pen in (0.1, 0.5, 1.0, 2.0, 5.0):
+                try:
+                    mdl = CoxPHFitter(penalizer=pen).fit(
+                        sub[k + ['time', 'event']], 'time', 'event')
+                    return mdl, k
+                except Exception as ex:
+                    last = ex
+            raise last if last else RuntimeError('cox arm failed')
+
+        cph_t, keep_t = _cox_arm(df_tr['treatment'] == 1)
+        cph_c, keep_c = _cox_arm(df_tr['treatment'] == 0)
+        sf_t = cph_t.predict_survival_function(df_te[keep_t], times=[float(t_star)])
+        sf_c = cph_c.predict_survival_function(df_te[keep_c], times=[float(t_star)])
+        preds['Cox T-learner'] = sf_t.values[0] - sf_c.values[0]
         models['cox'] = (cph_t, cph_c)
+        models['cox_keep'] = (keep_t, keep_c)
     except Exception:
         preds['Cox T-learner'] = np.zeros(nte); models['cox'] = None
+        models['cox_keep'] = None
 
     # nuisance (propensity + RSF survival)
     rf_p = RandomForestClassifier(n_estimators=200, max_depth=5, random_state=42).fit(X_tr, a_tr)

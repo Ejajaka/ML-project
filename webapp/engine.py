@@ -80,9 +80,8 @@ def fit_engine():
                  "test": int(len(X_te)),
                  "note": "semi-synthetic: real ACTG175 covariates + treatment, "
                          "simulated outcome with a known effect (rescaled regime)",
-                 "note_cox": "Cox T-learner does not converge on ACTG175 "
-                             "(constant covariate zprior); it returns 0, "
-                             "matching the offline benchmark."},
+                 "note_cox": "Cox T-learner fitted with per-arm dropped-constant "
+                             "columns and a small ridge penalty."},
     }
     return engine
 
@@ -95,16 +94,15 @@ def predict_all(engine, patient: dict) -> dict:
     M = engine["models"]
     out = {}
 
-    # Cox T-learner. NOTE: on ACTG175 the Cox fit does not converge (the
-    # covariate `zprior` is constant), so the offline benchmark falls back to
-    # zeros; we mirror that here so offline == website.
+    # Cox T-learner (per-arm dropped-constant columns, mirroring the pipeline)
     cox = M.get("cox")
-    if cox is not None:
+    keeps = M.get("cox_keep")
+    if cox is not None and keeps is not None:
         try:
             import pandas as pd
             dfx = pd.DataFrame(x, columns=covs)
-            st = cox[0].predict_survival_function(dfx, times=[engine["t_star"]]).values[0][0]
-            sc = cox[1].predict_survival_function(dfx, times=[engine["t_star"]]).values[0][0]
+            st = cox[0].predict_survival_function(dfx[keeps[0]], times=[engine["t_star"]]).values[0][0]
+            sc = cox[1].predict_survival_function(dfx[keeps[1]], times=[engine["t_star"]]).values[0][0]
             out["Cox T-learner"] = float(st - sc)
         except Exception:
             out["Cox T-learner"] = 0.0

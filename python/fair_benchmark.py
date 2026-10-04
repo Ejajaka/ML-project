@@ -25,7 +25,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--quick', action='store_true')
-    ap.add_argument('--reps', type=int, default=3)
+    ap.add_argument('--reps', type=int, default=10)
     ap.add_argument('--regime', choices=['rescaled', 'original'], default='rescaled')
     args = ap.parse_args()
     REPS = args.reps

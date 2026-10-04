@@ -5,7 +5,8 @@
     "n_treated": 1607,
     "train": 1497,
     "test": 642,
-    "note": "semi-synthetic: real ACTG175 covariates + treatment, simulated outcome with a known effect (rescaled regime)"
+    "note": "semi-synthetic: real ACTG175 covariates + treatment, simulated outcome with a known effect (rescaled regime)",
+    "note_cox": "Cox T-learner fitted with per-arm dropped-constant columns and a small ridge penalty."
   },
   "t_star": 713.0979546582122,
   "features": [
