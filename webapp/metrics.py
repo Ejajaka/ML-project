@@ -21,7 +21,19 @@ METRICS = ["MAE", "RMSE", "R2", "Spearman", "Acc", "Prec", "Rec", "F1", "AUC", "
 LOWER_BETTER = {"MAE", "RMSE", "Rules"}
 
 
-def load_metrics(regime: str = "original"):
+def clean_nan(o):
+    """Recursively replace NaN with None so responses are JSON-safe."""
+    import math
+    if isinstance(o, dict):
+        return {k: clean_nan(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [clean_nan(v) for v in o]
+    if isinstance(o, float) and math.isnan(o):
+        return None
+    return o
+
+
+def load_metrics(regime: str = "rescaled"):
     path = os.path.join(RESULTS, f"fair_benchmark_{regime}.csv")
     if not os.path.exists(path):
         path = os.path.join(RESULTS, "fair_benchmark.csv")

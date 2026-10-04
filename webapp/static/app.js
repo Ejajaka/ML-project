@@ -52,6 +52,7 @@ async function boot() {
   fillDemo();
   renderRules();
   renderMetrics();
+  renderCanonical();
 }
 
 function buildForm() {
@@ -299,6 +300,31 @@ function renderMetrics() {
 }
 
 // keep the matched rule highlighted when rules re-render
+function renderCanonical() {
+  const c = METRICS && METRICS.canonical;
+  const tbl = el("canonicalTable");
+  if (!tbl || !c || !c.methods) return;
+  const setEl = el("canonicalSetting");
+  if (setEl) setEl.textContent = c.setting || "";
+  const order = ["Cox T-learner", "CSF (RF)", "Bo & Ding", "Hybrid", "CRE", "SCRE",
+                 "CISCaRL (direct)", "CISCaRL (auto)", "CISCaRL (posthoc)"];
+  const cols = ["MAE", "RMSE", "R2", "Spearman", "Acc", "F1", "AUC", "Rules"];
+  let html = '<thead><tr><th style="text-align:left">Method</th>' +
+    cols.map(x => `<th>${x}</th>`).join("") + "</tr></thead><tbody>";
+  order.forEach(m => {
+    const r = c.methods[m]; if (!r) return;
+    html += `<tr><td class="method">${m}</td>`;
+    cols.forEach(x => {
+      const v = r[x];
+      const dec = x === "R2" ? 2 : (x === "Rules" ? 0 : 3);
+      html += `<td>${(v === null || v === undefined || Number.isNaN(v)) ? "n/a" : Number(v).toFixed(dec)}</td>`;
+    });
+    html += "</tr>";
+  });
+  html += "</tbody>";
+  tbl.innerHTML = html;
+}
+
 el("btnDemo").onclick = fillDemo;
 el("btnRun").onclick = run;
 boot();

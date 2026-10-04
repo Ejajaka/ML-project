@@ -24,7 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from engine import predict_all, cis_matched_rule, all_rules
-from metrics import load_metrics
+from metrics import load_metrics, clean_nan
 
 ART = os.path.join(HERE, "artifacts", "engine.joblib")
 app = FastAPI(title="CISCaRL Live API")
@@ -71,8 +71,16 @@ def rules():
 
 
 @app.get("/api/metrics")
-def metrics(regime: str = "original"):
-    return load_metrics(regime)
+def metrics(regime: str = "rescaled"):
+    out = load_metrics(regime)
+    e = get_engine()
+    # the exact metrics of THIS demo's configuration (matches the offline CSV row)
+    out["canonical"] = {
+        "setting": f"{e['canonical']['dataset']} / {e['canonical']['dgp']} / "
+                   f"{e['canonical']['regime']} / seed {e['canonical']['seed']}",
+        "methods": clean_nan(e["instance_metrics"]),
+    }
+    return out
 
 
 @app.post("/api/predict")

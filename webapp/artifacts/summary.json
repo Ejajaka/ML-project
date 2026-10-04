@@ -1,12 +1,13 @@
 {
   "meta": {
     "n": 2139,
-    "n_events": 521,
+    "n_events": 1221,
     "n_treated": 1607,
     "train": 1497,
-    "test": 642
+    "test": 642,
+    "note": "semi-synthetic: real ACTG175 covariates + treatment, simulated outcome with a known effect (rescaled regime)"
   },
-  "t_star": 582.0,
+  "t_star": 713.0979546582122,
   "features": [
     "age",
     "wtkg",
@@ -28,17 +29,17 @@
     "arms"
   ],
   "rule_counts": {
-    "CISCaRL": 14,
-    "SCRE": 1,
-    "Bo & Ding": 161,
-    "Hybrid": 538,
-    "CRE": 1474,
+    "CISCaRL": 9,
+    "SCRE": 2,
+    "Bo & Ding": 229,
+    "Hybrid": 642,
+    "CRE": 1497,
     "CSF (black-box)": 0,
     "Cox T-learner": 0
   },
   "demo_patient": {
-    "age": 29.0,
-    "wtkg": 81.4212,
+    "age": 30.0,
+    "wtkg": 77.3388,
     "hemo": 0.0,
     "homo": 1.0,
     "drugs": 0.0,
@@ -47,13 +48,13 @@
     "z30": 0.0,
     "zprior": 1.0,
     "preanti": 0.0,
-    "race": 0.0,
+    "race": 1.0,
     "gender": 1.0,
     "str2": 0.0,
     "strat": 1.0,
     "symptom": 0.0,
-    "cd40": 356.0,
-    "cd80": 828.0,
-    "arms": 0.0
+    "cd40": 209.0,
+    "cd80": 452.0,
+    "arms": 1.0
   }
 }
