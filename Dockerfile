@@ -17,4 +17,5 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY --chown=user . .
 
 EXPOSE 7860
-CMD ["uvicorn", "webapp.server:app", "--host", "0.0.0.0", "--port", "7860"]
+# Honor $PORT (Render/Fly/Koyeb set it); default 7860 for HF Spaces.
+CMD ["sh", "-c", "uvicorn webapp.server:app --host 0.0.0.0 --port ${PORT:-7860}"]

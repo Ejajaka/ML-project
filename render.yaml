@@ -1,0 +1,12 @@
+# Render Blueprint — free Docker web service for the CISCaRL Live backend.
+# Deploy: Render dashboard -> New -> Blueprint -> connect this repo.
+services:
+  - type: web
+    name: ciscarl-live
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    branch: main
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
