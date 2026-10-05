@@ -141,7 +141,7 @@ are from this semi-synthetic protocol.
 - **DGPs**: 4 semi-synthetic (AFT-Gumbel, Cox PH, Non-PH crossing, Nonlinear
   XOR) with known ground-truth CATE, under **two effect regimes**:
   `original` (harder; CATE std ~0.06-0.10) and `rescaled` (CATE std ~0.13-0.32).
-- **Repetitions**: 3 reps x 4 datasets x 4 DGPs = 48 settings per regime;
+- **Repetitions**: 10 reps x 4 datasets x 4 DGPs = 160 settings per regime;
   **all methods run on identical splits** within each rep.
 - **Methods**: Cox T-learner, CSF, Bo&Ding, Hybrid, CRE, SCRE, CISCaRL
   (direct/auto/posthoc).
@@ -151,22 +151,43 @@ are from this semi-synthetic protocol.
 
 ### 3.2 Main results (original, harder regime)
 
-Overall MAE (mean +/- SE over 48 settings):
+Overall MAE (mean +/- SE over 160 settings):
 
-| Method | MAE | vs CISCaRL-posthoc (Holm) |
+| Method | MAE | vs CISCaRL-posthoc (paired t, Holm) |
 |---|---|---|
-| SCRE | 0.090 +/- 0.004 | beats (p<0.0001) |
-| **CISCaRL-posthoc** | **0.136 +/- 0.010** | baseline |
-| Cox | 0.149 +/- 0.014 | ns |
-| CISCaRL-auto | 0.154 +/- 0.012 | worse |
-| CISCaRL-dir | 0.160 +/- 0.012 | worse |
-| CSF | 0.168 +/- 0.010 | **worse (CISCaRL beats CSF, p<0.0001, d=0.76)** |
-| Hybrid | 0.364 +/- 0.013 | worse |
-| CRE | 0.366 +/- 0.012 | worse |
-| Bo&Ding | 0.408 +/- 0.017 | worse |
+| SCRE | 0.0908 +/- 0.0023 | beats (p<0.0001, delta=-0.036) |
+| **CISCaRL-posthoc** | **0.1269 +/- 0.0057** | baseline |
+| CISCaRL-auto | 0.1427 +/- 0.0060 | worse (p<0.0001) |
+| CISCaRL-dir | 0.1522 +/- 0.0064 | worse (p<0.0001) |
+| Cox | 0.1583 +/- 0.0057 | worse (p<0.0001) |
+| CSF | 0.1619 +/- 0.0053 | **worse (CISCaRL beats CSF, p<0.0001)** |
+| CRE | 0.3663 +/- 0.0067 | worse (p<0.0001) |
+| Hybrid | 0.3669 +/- 0.0073 | worse (p<0.0001) |
+| Bo&Ding | 0.4138 +/- 0.0092 | worse (p<0.0001) |
 
-**Rule counts**: CISCaRL 3.3-6.0; Bo&Ding 218, Hybrid 377, CRE 698; CSF/Cox
-none; SCRE 1.2.
+**Rule counts**: CISCaRL 3.6-6.4; Bo&Ding 221, Hybrid 379, CRE 698; CSF/Cox
+none; SCRE 1.25.
+
+### 3.2b Results under the rescaled (larger-effect) regime
+
+Overall MAE (mean +/- SE over 160 settings):
+
+| Method | MAE | vs CISCaRL-posthoc (paired t, Holm) |
+|---|---|---|
+| SCRE | 0.2038 +/- 0.0053 | beats (p<0.0001) |
+| CSF | 0.2243 +/- 0.0110 | **beats (p<0.0001)** |
+| Cox | 0.2442 +/- 0.0104 | ns (p=0.34) |
+| **CISCaRL-posthoc** | **0.2476 +/- 0.0102** | baseline |
+| CISCaRL-auto | 0.2551 +/- 0.0095 | worse (p=0.02) |
+| CISCaRL-dir | 0.2606 +/- 0.0098 | worse (p=0.001) |
+| CRE | 0.3841 +/- 0.0093 | worse (p<0.0001) |
+| Hybrid | 0.3850 +/- 0.0099 | worse (p<0.0001) |
+| Bo&Ding | 0.4198 +/- 0.0107 | worse (p<0.0001) |
+
+Under the larger-effect rescaled regime the black-box CSF pulls ahead of
+CISCaRL (the interpretable rule list trades a little MAE for its rule
+structure), while CISCaRL still ties Cox and beats every rule-ensemble baseline
+(CRE/Hybrid/Bo&Ding) by 1.5-1.7x with 30-180x fewer rules.
 
 ### 3.3 Conformal coverage (empirical validation)
 
@@ -205,8 +226,8 @@ finding in itself.
 
 ## 4. Honest Limitations
 
-1. **Ranking**: CISCaRL is mid-pack on Spearman rank correlation (0.07-0.21 vs
-   SCRE 0.18-0.23, CSF 0.13-0.33). If the clinical task is "who to treat
+1. **Ranking**: CISCaRL is mid-pack on Spearman rank correlation (0.08-0.22 vs
+   SCRE 0.16-0.22, CSF 0.15-0.33). If the clinical task is "who to treat
    first," other methods rank better. CISCaRL's value is interpretable *point
    estimates*, not prioritization.
 2. **SCRE**: one competitor (SCRE) achieves lower MAE, but returns ~1.3 rules
@@ -216,8 +237,9 @@ finding in itself.
 3. **Regime dependence**: CISCaRL beats CSF under the harder original regime
    (d=0.76) but not the rescaled one (CSF d=-0.46). The claim is "beats CSF
    under realistic small-effect conditions," not universally.
-4. **Reps**: 3 reps resolve the large effects (CSF, Bo&Ding gaps) but not the
-   fine SCRE/Cox ordering; more reps would tighten SEs.
+4. **Reps**: 10 reps (160 settings/regime) tighten the SEs enough to resolve
+   the fine ordering (rescaled Cox vs CISCaRL is a tie, p=0.34; CSF beats
+   CISCaRL there, p<0.0001). Residual multiplicity remains.
 5. **R2**: negative for all methods on real-covariate data; a perfect-subgroup
    oracle scores +0.75-1.00, so this reflects inherent CATE difficulty, not a
    method defect. PEHE/RMSE/rank are the primary metrics.
