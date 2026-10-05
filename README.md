@@ -3,8 +3,6 @@
 **Live demo:** https://ejajaka.github.io/ML-project/ — enter a patient, run every
 method, and read the rules each one discovered.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Ejajaka/ML-project)
-
 **CISCaRL** is a framework for interpretable heterogeneous treatment effect (HTE)
 estimation with right-censored survival outcomes. It produces a short,
 human-readable rule list where every rule comes with a valid, distribution-free
