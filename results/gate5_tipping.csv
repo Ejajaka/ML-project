@@ -1,0 +1,4 @@
+rule,n,base,tip_v,tip_abs
+wtkg > 79.2,108,TREAT,TREAT,
+cd80 > 1080.5,111,TREAT,TREAT,
+cd40 <= 477.5,271,TREAT,TREAT,

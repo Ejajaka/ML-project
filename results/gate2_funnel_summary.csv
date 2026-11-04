@@ -1,0 +1,3 @@
+cell,mechanism,reps,null_rate,cause_no_cand,cause_stability,mean_cand,mean_stable,best_freq_mean,best_freq_p10,median_support,psi_sd
+0,independent,100,25.0,0.0,25.0,158.6,3.85,0.6869999999999998,0.5,142.625,0.9759233605502053
+1,covariate,100,23.0,0.0,23.0,159.1,3.47,0.6734999999999998,0.5,140.215,1.3705431814504063

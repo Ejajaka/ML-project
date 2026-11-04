@@ -1,0 +1,855 @@
+<!doctype html><html><head><meta charset='utf-8'><title>CISCaRL manuscript</title><style>
+@page {
+  size: A4;
+  margin: 18mm 16mm 18mm 16mm;
+}
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 10.2pt;
+  line-height: 1.42;
+  color: #111;
+  max-width: 100%;
+}
+h1 {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 17pt;
+  line-height: 1.2;
+  margin: 0 0 6pt 0;
+  color: #10243b;
+}
+h2 {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 12.5pt;
+  margin: 16pt 0 6pt 0;
+  padding-bottom: 2pt;
+  border-bottom: 0.7pt solid #9aa8b5;
+  color: #10243b;
+  page-break-after: avoid;
+}
+h3 {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 10.8pt;
+  margin: 11pt 0 4pt 0;
+  color: #10243b;
+  page-break-after: avoid;
+}
+p { margin: 0 0 6pt 0; text-align: justify; }
+ul, ol { margin: 0 0 7pt 0; padding-left: 16pt; }
+li { margin-bottom: 2.5pt; }
+strong { color: #000; }
+hr { border: none; border-top: 0.6pt solid #bbb; margin: 12pt 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 5pt 0 10pt 0;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 7.6pt;
+  line-height: 1.28;
+  page-break-inside: auto;
+}
+thead { display: table-header-group; }
+tr { page-break-inside: avoid; }
+th, td {
+  border: 0.5pt solid #8c9aa6;
+  padding: 2.6pt 3.2pt;
+  vertical-align: top;
+  text-align: left;
+}
+th { background: #e8edf2; font-weight: 700; }
+tbody tr:nth-child(even) td { background: #f7f9fb; }
+code {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 8.6pt;
+  background: #f2f4f6;
+  padding: 0 1.5pt;
+}
+blockquote {
+  margin: 6pt 0 8pt 0;
+  padding: 5pt 8pt;
+  border-left: 2.5pt solid #8c9aa6;
+  background: #f6f8fa;
+  font-size: 9.8pt;
+}
+a { color: #1b4f80; text-decoration: none; }
+</style></head><body><h1>Support-constrained interpretable subgroup discovery for survival outcomes: a measured operating range and its boundaries</h1>
+<p><strong>Status:</strong> full manuscript draft. All simulation numbers use the corrected rule
+implementation and the honest 4000/2000/2000 partition, and include the Gate 28
+SCRE head-to-head. References marked <code>[ref: ...]</code> still need bibliographic
+completion.</p>
+<hr />
+<h2>Abstract</h2>
+<p><strong>Background.</strong> Interpretable subgroup analyses are often justified by the claim
+that they identify patients who benefit more than the average. That claim is
+rarely tested against the simplest competitor: a constant model that assigns
+every patient the marginal average treatment effect.</p>
+<p><strong>Methods.</strong> We study a fixed-time survival treatment-effect estimand,
+τ(730|x) = P(T¹&gt;730|x) − P(T⁰&gt;730|x), for a composite progression-free endpoint.
+Estimation is doubly robust: per-arm Cox nuisances are cross-fitted, censoring is
+adjusted with a conditional Cox model and a weight cap, and subgroup effects are
+estimated with AIPW influence functions. Discovery fits a depth-3 CART to the
+AIPW pseudo-outcome. The high-benefit leaf is selected by maximum discovery mean
+subject to a minimum support of 200 patients, its effect is re-estimated on a
+disjoint validation partition, and treatment is recommended only when the
+validation lower confidence bound exceeds zero. Discovery, validation and
+assessment partitions are disjoint (4000/2000/2000 at n = 8000).</p>
+<p><strong>Results.</strong> At n = 2000 no discovered rule model beats the constant; from
+n ≈ 6000 the pseudo-outcome model does, reaching 36–52 % lower held-out MAE at
+n = 8000–12 000. Support-constrained selection raises captured benefit by 0.18
+to 0.29 and ground-truth recovery by 0.09 to 0.17 over max-mean selection across
+a single-region and a two-region DGP, at purity 0.81–0.86 and with no prediction
+cost. Validation-based commitment yields 0 % null-benefit treatment and decision
+efficiency 0.82–0.87. A two-leaf extension captures more benefit but dilutes
+purity from 0.86 to 0.70; a flexible doubly robust learner with rule
+distillation produces a purer but narrower rule. Against SCRE on identical
+splits the model is 0.003–0.004 worse on patient-level MAE — significantly so in
+the single-region setting — while being substantially purer (0.86 vs 0.43–0.58)
+and roughly twice as beneficial per treated patient. On ACTG175 the support
+constraint cannot be met at that sample size: the model falls back to a
+62-patient leaf and the commitment layer abstains.</p>
+<p><strong>Conclusions.</strong> The method is a defensible point on the capture–purity frontier
+with a measured sample-size and reproducibility boundary. It is not a universal
+improvement over the marginal average treatment effect, it is not more accurate
+than SCRE, and its subgroup is a partial, high-purity subset rather than the true
+treatment-effect region.</p>
+<hr />
+<h2>1. Introduction</h2>
+<p>Subgroup analysis promises to turn an average treatment effect into a decision:
+who should be treated, how much benefit should be expected, and when the evidence
+is too weak to act. The promise is easy to state and hard to verify. In a
+randomized trial, the marginal average treatment effect is estimable with
+standard methods; a subgroup claim requires the treatment-effect surface to vary
+with covariates, the variation to be recoverable from the observed sample, and
+the discovered rule to remain useful out of sample.</p>
+<p>These are three different requirements. Detection asks whether treatment effects
+differ at all. Recovery asks whether the boundary between benefiting and
+non-benefiting patients can be identified. Decision quality asks whether the
+resulting policy treats the right patients. A method can succeed at one and fail
+at another, and the failure is often invisible if only a single metric is
+reported.</p>
+<p>This paper studies a deliberately simple competitor: a constant model that gives
+every patient the marginal average treatment effect estimated on the training
+data. If a subgroup model cannot beat that constant on held-out patients, its
+rules are not adding information; they are adding variance. We use this
+benchmark throughout, alongside an oracle that knows the true region membership
+but estimates its effect from the same data.</p>
+<p>Our contributions are methodological and empirical:</p>
+<ol>
+<li><strong>An honest evaluation design.</strong> Discovery, validation and assessment are
+   disjoint. Rules and thresholds are fitted on discovery; leaf effects and the
+   treatment decision use validation; the assessment partition is never used for
+   selection. This removes the test-set reuse that inflates subgroup and policy
+   metrics.</li>
+<li><strong>A support-constrained selection rule.</strong> Among the leaves discovered by a
+   depth-3 CART on a doubly robust pseudo-outcome, the high-benefit leaf must
+   contain at least 200 discovery patients. This directly targets the winner's
+   curse that selects small, extreme leaves.</li>
+<li><strong>A validation-based commitment layer.</strong> A rule is recommended only when its
+   validation lower confidence bound exceeds zero; otherwise the method abstains.</li>
+<li><strong>A measured operating range.</strong> We locate the sample size at which the rule
+   model starts to beat the constant, and we measure the reproducibility of the
+   selected leaf across discovery subsamples.</li>
+<li><strong>Documented negative results.</strong> Restricted mean survival time, minimum-support
+   tuning, random-forest stability selection, target blending, a two-leaf rule
+   list and a flexible-learner distillation were each tested and rejected. They
+   mark the operating boundaries rather than being omitted.</li>
+</ol>
+<p>We do not claim that the method is universally superior, that it recovers the
+true subgroup, or that it is robust without qualification.</p>
+<hr />
+<h2>2. Related work</h2>
+<p>Doubly robust estimation for survival outcomes combines an outcome model with a
+censoring model so that the treatment contrast remains consistent if either is
+correct. Cross-fitting removes the overfitting bias of nuisance estimation
+[ref: double machine learning]. AIPW pseudo-outcomes provide patient-level
+signals whose conditional mean is the treatment effect; they are the basis of
+DR-learner and R-learner approaches to heterogeneous treatment effects
+[ref: DR-learner; ref: R-learner].</p>
+<p>Causal survival forests estimate conditional treatment effects under right
+censoring using local estimating equations and orthogonal scores
+[Cui et al., 2023]. They are a natural flexible benchmark. Survival meta-learners
+combine arm-specific survival models into a treatment-effect surface, and
+tree-based subgroup discovery converts such surfaces into interpretable regions
+[ref: 2026 survival HTE framework]. Interpretable causal subgroup discovery and
+stability selection have developed separately [ref: subgroup discovery; ref:
+stability selection].</p>
+<p>The present work is not a new learner. Its contribution is the integration and
+evaluation of (i) cross-fitted censoring-adjusted subgroup estimation, (ii)
+support-constrained selection, (iii) validation-based commitment and abstention,
+and (iv) an honest assessment of benefit capture, purity, stability and decision
+quality, including the sample-size and reproducibility boundary. The negative
+results are part of that evaluation. A full literature review is required before
+any novelty claim beyond this integration.</p>
+<hr />
+<h2>3. Methods</h2>
+<h3>3.1 Estimand and notation</h3>
+<p>Let T^a be the potential event time under treatment a ∈ {0,1}, C the censoring
+time, T = min(T^a, C), Δ = 1{T^a ≤ C}, and X a vector of baseline covariates.
+The estimand is the fixed-horizon survival-probability contrast</p>
+<p>τ(730 | x) = P(T¹ &gt; 730 | X = x) − P(T⁰ &gt; 730 | X = x),</p>
+<p>where the event is the composite of CD4 decline ≥ 50, AIDS progression, or
+death, and the contrast is under the observed follow-up process. For a subgroup
+r, τ(r) = E[τ(X) | X ∈ r].</p>
+<h3>3.2 Nuisance estimation and AIPW</h3>
+<p>Per-arm Cox models estimate μ_a(x) = P(T^a &gt; 730 | x); a Cox model on X estimates
+the censoring survival G(t | x). Both are fitted with five-fold cross-fitting on
+the discovery partition only. The inverse-probability weight is capped at
+min(Q₀.₉₉ of the fold-training weights, 20), which stabilizes the estimator under
+moderate censoring. The patient-level pseudo-outcome is</p>
+<p>ψ_i = (A_i − e)/(e(1−e)) · (Y_i − μ_{A_i}(X_i)) + μ₁(X_i) − μ₀(X_i),</p>
+<p>with Y_i = 1{T_i &gt; 730}/G(730 | X_i) and e = 0.5 by randomization. The subgroup
+effect is the mean of the held-out influence values φ_i = φ₁,i − φ₀,i over the
+rule, with an influence-function standard error.</p>
+<h3>3.3 Discovery</h3>
+<p>A depth-3 CART with min_samples_leaf = 60 is fitted to ψ on the discovery
+partition. Each root-to-leaf path is a candidate rule. The tree is
+deterministic given the data and the seed; no ensemble or stability filter is
+used in the final model. Rule conditions are simplified to the binding threshold
+on each feature, and the leaf membership is checked against the stored mask.</p>
+<h3>3.4 Support-constrained selection</h3>
+<p>The selected leaf is the one with the largest discovery mean ψ among leaves with
+at least 200 discovery patients. If no leaf meets the support requirement, the
+model falls back to the unconstrained maximum and reports the fallback. The
+support constraint targets the winner's curse: a small leaf can have an extreme
+sample mean without a stable treatment effect.</p>
+<h3>3.5 Validation-based commitment</h3>
+<p>Leaf effects are re-estimated on the validation partition with AIPW. A leaf is
+recommended for treatment only if</p>
+<p>τ̂_L &gt; 1.645 · SE_L,</p>
+<p>a one-sided 95 % lower confidence bound above zero. Otherwise the method
+abstains and assigns the training marginal ATE as the prediction default. The
+decision fallback is no treatment; the prediction fallback is the marginal ATE.
+These are deliberately different objects.</p>
+<h3>3.6 Honest roles</h3>
+<p>At n = 8000 the data are split 4000 discovery / 2000 validation / 2000
+assessment, stratified by treatment. The discovery partition fits the CART and
+the nuisance models; the validation partition estimates leaf effects and makes
+the commitment decision; the assessment partition is used only to score the
+frozen model. No assessment patient influences a rule, a threshold, a support
+constraint or a commitment decision.</p>
+<h3>3.7 Metrics</h3>
+<ul>
+<li><strong>Captured benefit:</strong> the fraction of total true τ in the assessment set that
+  lies in the selected leaf, computed without commitment.</li>
+<li><strong>Purity:</strong> P(true region | selected leaf).</li>
+<li><strong>Ground-truth recovery:</strong> Jaccard between the selected leaf and the true
+  region (or union of regions).</li>
+<li><strong>Reference-leaf recovery:</strong> mean Jaccard between the full-data selected leaf
+  and leaves selected by the same procedure on disjoint discovery half-samples;
+  recovery frequency at Jaccard &gt; 0.8.</li>
+<li><strong>Decision:</strong> commitment rate, coverage, per-treated true τ, decision
+  efficiency (per-treated / oracle at the same coverage), captured benefit under
+  commitment, null-treatment rate (committed leaf with true mean τ ≤ 0.01).</li>
+<li><strong>Prediction:</strong> MAE against the true individual τ, paired with the constant
+  baseline.</li>
+</ul>
+<hr />
+<h2>4. Simulation study</h2>
+<h3>4.1 Data-generating mechanisms</h3>
+<p>All DGPs use the ACTG175 covariate matrix (standardized), a randomized treatment
+with e = 0.5, exponential event times with a Cox linear predictor, and a
+covariate-dependent censoring mechanism calibrated to 10 % censoring before day
+730.</p>
+<ul>
+<li><strong>Single region:</strong> <code>cd40 &lt; median(340) ∧ age &gt; median(34)</code>, prevalence 25 %,
+  treatment effect +0.20 in S(730), zero outside.</li>
+<li><strong>Two regions:</strong> R1 as above (+0.20) and
+  <code>karnof &lt; median ∧ wtkg &lt; median</code> (+0.15); the overlap takes the larger offset;
+  zero outside. The true region is R1 ∪ R2.</li>
+<li><strong>Joint stress:</strong> the two-region DGP plus a control-arm non-proportional-hazards
+  violation inside R1 (hazard multiplier e^{±κz}/cosh(κz), κ = 3, S(730)
+  unchanged) and marginal Kaplan–Meier censoring in the estimator.</li>
+</ul>
+<p>The true τ(X) is computed analytically from the DGP, never from the observed
+sample.</p>
+<h3>4.2 Design and decision rules</h3>
+<p>n = 8000, 40 fresh seeds per cell, 4000/2000/2000 partitions. The four-part
+adoption rule is fixed before each experiment: mean paired Δ MAE &lt; 0, 95 % CI
+entirely below 0, best-leaf Jaccard ≥ 0.107, and at least 70 % of replications
+better than the constant. For selection and stability experiments, the primary
+contrast is paired against max-mean selection with 95 % bootstrap CIs.</p>
+<h3>4.3 Comparator</h3>
+<p>SCRE is fitted on the same discovery partition, its α is selected on validation
+by concordance, and it predicts the untouched assessment partition. Its internal
+time point is overridden to 730 so that both methods target the same contrast.
+Because SCRE is a rule ensemble with its own selection step, the comparison is
+run on identical splits with paired differences over 40 seeds, not against
+published numbers. The α path that produces the large rule list is not used: the
+validation-concordance choice returns roughly one rule, so the comparator is
+close to a near-constant Cox model, and its accuracy advantage should be read
+with that in mind.</p>
+<hr />
+<h2>5. Results</h2>
+<h3>5.1 The constant baseline and the sample-size boundary</h3>
+<p>At n = 2000 the rule model is worse than the constant: the ψ-CART has MAE 0.0930
+against 0.0735 (Δ = +0.0194, 17.5 % of replications better), and the plug-in
+target is also worse (0.0953, 20 % better). The oracle — true region membership
+with the same AIPW effects — reaches 0.0440, a 40.1 % improvement. The barrier at
+n = 2000 is therefore <strong>discovery</strong>, not a lack of information.</p>
+<p>At n = 4000 the ψ-CART is still not reliable (gain +4.5 %, CI crossing zero,
+55 % of replications); the plug-in target passes (+11.4 %, 70 %). At n = 6000
+both work (ψ +21.7 %, plug-in +26.3 %). At n = 8000–12 000 the ψ-CART reaches
++35.7 % / +46.8 % and the plug-in +32.5 % / +39.2 %.</p>
+<p><strong>Operating range.</strong> The ψ-CART is usable from n ≈ 6000. The old random-forest
+pipeline needed ≈8000. The plug-in target is better at 4000–6000; the two
+targets are statistically tied at n = 8000 under a correct outcome model, and ψ
+is better at n = 12000 and under outcome-model misspecification.</p>
+<h3>5.2 Target comparison</h3>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>κ</th>
+<th>ψ gain</th>
+<th>plug-in gain</th>
+<th>ψ reps better</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8000</td>
+<td>0</td>
+<td>+35.7 %</td>
+<td>+32.5 %</td>
+<td>98 %</td>
+</tr>
+<tr>
+<td>8000</td>
+<td>3</td>
+<td>+30.9 %</td>
+<td>−4.9 %</td>
+<td>92 %</td>
+</tr>
+<tr>
+<td>12000</td>
+<td>0</td>
+<td>+46.8 %</td>
+<td>+39.2 %</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>12000</td>
+<td>3</td>
+<td>+51.9 %</td>
+<td>+5.3 %</td>
+<td>100 %</td>
+</tr>
+</tbody>
+</table>
+<p>The plug-in collapses under the κ=3 outcome violation because its target is
+model-based; ψ is doubly robust and survives. Paired ψ − plug-in MAE is
+−0.0023 [−0.0069, +0.0026] at n = 8000/κ=0 (a tie), −0.0054 [−0.0097, −0.0011]
+at n = 12000/κ=0, and −0.0261 / −0.0340 under κ=3.</p>
+<h3>5.3 Support-constrained selection (single region)</h3>
+<table>
+<thead>
+<tr>
+<th>arm</th>
+<th>support</th>
+<th>captured benefit</th>
+<th>purity</th>
+<th>Jaccard</th>
+<th>commit</th>
+<th>coverage</th>
+<th>efficiency</th>
+<th>captured (committed)</th>
+<th>null</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>max mean</td>
+<td>285</td>
+<td>0.229</td>
+<td>0.63</td>
+<td>0.22</td>
+<td>42 %</td>
+<td>0.051</td>
+<td>0.85</td>
+<td>0.183</td>
+<td>0 %</td>
+</tr>
+<tr>
+<td><strong>support ≥200</strong></td>
+<td><strong>650</strong></td>
+<td><strong>0.516</strong></td>
+<td><strong>0.82</strong></td>
+<td><strong>0.46</strong></td>
+<td><strong>80 %</strong></td>
+<td><strong>0.142</strong></td>
+<td>0.84</td>
+<td><strong>0.458</strong></td>
+<td><strong>0 %</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Paired support − max mean: captured benefit +0.287 [+0.196, +0.389]; purity
++0.196; Jaccard +0.24. Under κ=3 the gain is +0.192 [+0.113, +0.278] and the
+committed captured benefit is 0.474 vs 0.288. The larger leaf is estimated more
+precisely on validation, so commitment rises from 55 % to 80 % and the null rate
+falls from 5 % to 0 %.</p>
+<h3>5.4 Stability (single region, own-procedure refits)</h3>
+<table>
+<thead>
+<tr>
+<th>arm</th>
+<th>reference recovery (J_full)</th>
+<th>median</th>
+<th>recovery freq</th>
+<th>ground-truth recovery</th>
+<th>full-data Jaccard with truth</th>
+<th>capture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>max mean</td>
+<td>0.199</td>
+<td>0.14</td>
+<td>4 %</td>
+<td>0.240</td>
+<td>0.317</td>
+<td>0.343</td>
+</tr>
+<tr>
+<td><strong>support ≥200</strong></td>
+<td><strong>0.318</strong></td>
+<td>0.28</td>
+<td>7 %</td>
+<td><strong>0.334</strong></td>
+<td><strong>0.522</strong></td>
+<td><strong>0.623</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The support rule improves both reference-leaf recovery (+0.119 [0.081, 0.159])
+and ground-truth recovery (+0.094 [0.076, 0.116]). It is better, not stable in
+absolute terms: only 7 % of half-samples recover the full-data leaf at
+Jaccard &gt; 0.8. The earlier "stability" metric that refit a max-mean rule was
+invalid; the corrected measurement refits each rule's own procedure.</p>
+<h3>5.5 Two-region confirmation</h3>
+<table>
+<thead>
+<tr>
+<th>arm</th>
+<th>support</th>
+<th>captured benefit</th>
+<th>purity</th>
+<th>J_true</th>
+<th>J_full</th>
+<th>commit</th>
+<th>coverage</th>
+<th>efficiency</th>
+<th>captured (committed)</th>
+<th>null</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>max mean</td>
+<td>248</td>
+<td>0.148</td>
+<td>0.77</td>
+<td>0.127</td>
+<td>0.160</td>
+<td>45 %</td>
+<td>0.040</td>
+<td>0.87</td>
+<td>0.098</td>
+<td>0 %</td>
+</tr>
+<tr>
+<td><strong>support ≥200</strong></td>
+<td><strong>677</strong></td>
+<td><strong>0.364</strong></td>
+<td><strong>0.82</strong></td>
+<td><strong>0.295</strong></td>
+<td><strong>0.275</strong></td>
+<td><strong>70 %</strong></td>
+<td><strong>0.129</strong></td>
+<td>0.84</td>
+<td><strong>0.284</strong></td>
+<td><strong>0 %</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Paired support − max mean: captured benefit +0.216 [+0.142, +0.291]; ground-truth
+recovery +0.168 [+0.112, +0.224]; reference recovery +0.115 [+0.078, +0.153];
+purity +0.046 (ns). The support constraint binds more strongly here (248 vs 677
+patients) and the relative gain is larger; absolute capture is lower (0.364)
+because one leaf cannot cover two separated regions.</p>
+<h3>5.6 Joint nuisance stress (two regions)</h3>
+<table>
+<thead>
+<tr>
+<th>arm</th>
+<th>captured benefit</th>
+<th>purity</th>
+<th>J_true</th>
+<th>commit</th>
+<th>efficiency</th>
+<th>captured (committed)</th>
+<th>null</th>
+<th>ATE bias</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>max mean</td>
+<td>0.172</td>
+<td>0.79</td>
+<td>0.148</td>
+<td>30 %</td>
+<td>0.87</td>
+<td>0.115</td>
+<td>0 %</td>
+<td>−0.008</td>
+</tr>
+<tr>
+<td>support ≥200</td>
+<td>0.351</td>
+<td>0.74</td>
+<td>0.276</td>
+<td>57 %</td>
+<td>0.82</td>
+<td>0.286</td>
+<td>0 %</td>
+<td>−0.008</td>
+</tr>
+</tbody>
+</table>
+<p>Capture, ground-truth recovery and reference recovery all improve with CIs
+excluding zero, but purity falls from 0.79 to 0.74 — 0.5 percentage points beyond
+the pre-registered −0.05 tolerance. The selection advantage survives; the purity
+guardrail narrowly fails. The decision layer remains safe (0 % null, 0.82
+efficiency).</p>
+<h3>5.7 Negative results</h3>
+<table>
+<thead>
+<tr>
+<th>lever</th>
+<th>experiment</th>
+<th>outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>split criterion</td>
+<td>4e</td>
+<td>no change</td>
+</tr>
+<tr>
+<td>min_support 60→200</td>
+<td>7</td>
+<td>no gain through the previous target</td>
+</tr>
+<tr>
+<td>RMST estimand</td>
+<td>8</td>
+<td>signal-to-noise 0.20 → 0.19; worse than its constant</td>
+</tr>
+<tr>
+<td>RF + stability at small n</td>
+<td>9–12</td>
+<td>too few rules; the single CART is better</td>
+</tr>
+<tr>
+<td>plug-in target under κ=3</td>
+<td>14</td>
+<td>collapses; ψ survives</td>
+</tr>
+<tr>
+<td>plug-in + AIPW blend</td>
+<td>15</td>
+<td>does not rescue; ψ alone is better</td>
+</tr>
+<tr>
+<td>two-leaf rule list</td>
+<td>25</td>
+<td>capture +0.169 but purity −0.166; rejected</td>
+</tr>
+<tr>
+<td>flexible DR-learner + distillation</td>
+<td>26</td>
+<td>capture −0.07 to −0.09, purity +0.06; rejected</td>
+</tr>
+</tbody>
+</table>
+<p>The two-leaf list is the clearest frontier result: it captures more of the
+two-region truth but includes too many non-beneficiaries. The flexible learner
+produces a purer but narrower rule; its distillation minimum (200 vs 60) makes
+the comparison conservative, so the negative applies to the tested
+implementation, not to flexible learning in general.</p>
+<h3>5.8 ACTG175 illustration</h3>
+<p>The final model was applied to ACTG175 (arms 0 vs 1; 527 discovery / 263
+validation / 264 assessment). The overall assessment contrast is
+τ(730) = +0.143 [+0.025, +0.262]. The support constraint is <strong>not achievable</strong> on
+527 discovery patients (largest leaf 174), so the model falls back to the
+max-mean leaf:</p>
+<p><code>cd40 ≤ 343.5 &amp; age &gt; 28.5 &amp; homo ≤ 0.5</code> (discovery support 62, validation
+n = 36, assessment n = 30).</p>
+<p>The validation effect is +0.085 (SE 0.189), so the one-sided lower bound is
+−0.226 and the model does not commit; the decision is <strong>INSUFFICIENT</strong>. The
+assessment effect (+0.540 [+0.178, +0.902]) is descriptive and rests on 30
+patients; the δ-tilt moves it between +0.447 and +0.623. The rule is an
+output-format illustration, not a validated subgroup, and the real data contain
+no known treatment-effect truth.</p>
+<h3>5.9 Head-to-head with SCRE</h3>
+<table>
+<thead>
+<tr>
+<th>DGP</th>
+<th>method</th>
+<th>MAE</th>
+<th>capture</th>
+<th>purity</th>
+<th>per-treated</th>
+<th>efficiency</th>
+<th>coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>single</td>
+<td>C200</td>
+<td>0.0562</td>
+<td>0.591</td>
+<td><strong>0.86</strong></td>
+<td><strong>+0.168</strong></td>
+<td>0.88</td>
+<td>0.175</td>
+</tr>
+<tr>
+<td>single</td>
+<td>SCRE</td>
+<td><strong>0.0519</strong></td>
+<td><strong>0.947</strong></td>
+<td>0.43</td>
+<td>+0.084</td>
+<td><strong>0.95</strong></td>
+<td>0.544</td>
+</tr>
+<tr>
+<td>two</td>
+<td>C200</td>
+<td>0.0715</td>
+<td>0.334</td>
+<td><strong>0.87</strong></td>
+<td><strong>+0.168</strong></td>
+<td><strong>0.85</strong></td>
+<td>0.140</td>
+</tr>
+<tr>
+<td>two</td>
+<td>SCRE</td>
+<td><strong>0.0685</strong></td>
+<td><strong>0.802</strong></td>
+<td>0.58</td>
+<td>+0.098</td>
+<td>0.80</td>
+<td>0.560</td>
+</tr>
+</tbody>
+</table>
+<p>Paired differences (C200 − SCRE): MAE +0.0043 [+0.0002, +0.0084], p = 0.046 in
+the single-region DGP and +0.0031 [−0.0007, +0.0068], p = 0.112 in the
+two-region DGP; capture −0.357 and −0.468, both p &lt; 0.001. Both methods have a
+0 % null-treatment rate.</p>
+<p>SCRE predicts individual effects more accurately and captures far more total
+benefit, because it treats 54–56 % of patients against 14–18 %. C200 is much
+purer and extracts roughly twice the benefit per treated patient. This is a
+precision–coverage trade. The claim that the rule model is a more accurate
+heterogeneity estimator than SCRE is not supported by these data.</p>
+<h3>5.10 Gate 30 — the calibration that closes the accuracy gap</h3>
+<p>The Gate 28 gap is a calibration problem rather than a selection problem. Leaf
+effects are estimated on 2000 validation patients and the prediction is a step
+function, so each leaf mean carries avoidable noise. Shrinking every leaf effect
+toward the marginal ATE — an empirical-Bayes weight from the within- and
+between-leaf variance, applied to prediction only — changes no decision:
+purity, capture, commitment and rank correlation are identical to four decimals,
+while MAE falls by 0.0051 (p &lt; 0.001) with one region and 0.0026 (p = 0.014)
+with two, pooled over 80 paired replications (40 tuning seeds and 40 fresh
+confirmation seeds).</p>
+<p>Pooled head-to-head on those 80 splits:</p>
+<table>
+<thead>
+<tr>
+<th>design</th>
+<th>method</th>
+<th>MAE</th>
+<th>vs SCRE [95 % CI]</th>
+<th>p</th>
+<th>purity</th>
+<th>capture</th>
+<th>per-treated</th>
+<th>coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>single</td>
+<td>C200</td>
+<td>0.0576</td>
+<td>+0.0062 [+0.0031, +0.0094]</td>
+<td>&lt;0.001</td>
+<td>0.890</td>
+<td>0.465</td>
+<td>+0.174</td>
+<td>0.133</td>
+</tr>
+<tr>
+<td>single</td>
+<td>C200-S</td>
+<td>0.0525</td>
+<td>+0.0011 [−0.0019, +0.0042]</td>
+<td>0.48</td>
+<td>0.890</td>
+<td>0.465</td>
+<td>+0.174</td>
+<td>0.133</td>
+</tr>
+<tr>
+<td>single</td>
+<td>SCRE</td>
+<td>0.0514</td>
+<td>—</td>
+<td>—</td>
+<td>0.437</td>
+<td>0.954</td>
+<td>+0.085</td>
+<td>0.548</td>
+</tr>
+<tr>
+<td>two</td>
+<td>C200</td>
+<td>0.0707</td>
+<td>+0.0031 [+0.0001, +0.0059]</td>
+<td>0.044</td>
+<td>0.858</td>
+<td>0.277</td>
+<td>+0.165</td>
+<td>0.117</td>
+</tr>
+<tr>
+<td>two</td>
+<td>C200-S</td>
+<td>0.0680</td>
+<td>+0.0004 [−0.0025, +0.0033]</td>
+<td>0.76</td>
+<td>0.858</td>
+<td>0.277</td>
+<td>+0.165</td>
+<td>0.117</td>
+</tr>
+<tr>
+<td>two</td>
+<td>SCRE</td>
+<td>0.0676</td>
+<td>—</td>
+<td>—</td>
+<td>0.599</td>
+<td>0.823</td>
+<td>+0.101</td>
+<td>0.563</td>
+</tr>
+</tbody>
+</table>
+<p>The frozen model is significantly worse than SCRE on patient-level MAE; the
+shrunk model is statistically tied. Because the shrinkage was chosen after Gate
+28 and only then confirmed, it is reported as <code>C200-S</code>, a post-hoc calibration,
+and not as part of the frozen design.</p>
+<p>The same sweep rejects every other lever: depth 4 is worse by 0.010 and 0.008,
+min-leaf changes are flat, and the commitment threshold moves coverage without
+moving accuracy. A separate small-sample grid shows the absolute 200-patient
+floor behaving badly at n = 2000 (purity 0.47, capture 0.096) where a 5 %
+proportional floor reaches 0.73 and 0.127; the proportional floor is the right
+specification below roughly 4000 discovery patients.</p>
+<hr />
+<h2>6. Discussion</h2>
+<p>The central empirical finding is a boundary, not a victory. At small samples the
+rule model is worse than the constant; at n ≥ 6000 it beats it; and the size of
+the gain depends on the truth structure. The constant baseline is essential:
+without it, a method that predicts the marginal effect for everyone can look like
+a success.</p>
+<p>The support constraint addresses a real selection problem. It raises capture and
+ground-truth recovery across a single-region and a two-region DGP, and it
+improves reproducibility of the selected leaf. It does not recover multiple
+regions: a single leaf captures 37–62 % of the true benefit. A two-leaf list
+captures more but dilutes purity to 0.70; a flexible learner produces a purer but
+narrower rule. These are points on a capture–purity frontier, not a sequence of
+failed attempts to find a dominant method.</p>
+<p>Validation-based commitment is the most robust component. It converts an
+uncertain high-effect leaf into an abstention: 0 % null-benefit treatment in the
+tested cells, 0.82–0.87 decision efficiency, at a coverage cost. The ACTG175
+illustration shows the intended behavior at a sample size where the support
+constraint cannot bind.</p>
+<p>The negative results are part of the contribution. They show which levers do not
+move the frontier — the estimand, the tree criterion, the support floor alone,
+the ensemble, the blend, the second leaf, the flexible learner in this
+implementation — and they bound the claims.</p>
+<p>The SCRE comparison closes the remaining external question, and it closes it
+against the rule model on the metric SCRE is designed for. On identical splits
+SCRE has lower patient-level MAE, and in the single-region setting the gap is
+statistically reliable. What the rule model offers instead is selection: it
+treats a third as many patients, at nearly twice the benefit per treated patient
+and at much higher subgroup purity. A reader who wants the best individual-level
+effect estimate should use SCRE; a reader who wants a narrow, interpretable,
+abstention-capable policy should use the rule model and accept the accuracy cost.
+Reporting only capture or only MAE would hide this trade in opposite directions.</p>
+<h3>What would change the conclusion</h3>
+<p>A larger sample would raise capture and stability. A different rule geometry
+(diagonal or interaction-defined truths) could raise the capture ceiling for the
+same sample size, but that experiment has not been run. External validation in a
+different trial, endpoint or treatment would test transportability. None of these
+is established here.</p>
+<h3>Positioning</h3>
+<p>The contribution is the integration and evaluation described in Section 2, not a
+new learner. The 2026 survival HTE frameworks already combine meta-learners with
+tree-based subgroup discovery, and causal survival forests already provide
+flexible censoring-adjusted effect estimation. A claim of novelty beyond this
+integration would require a full literature review and, most likely, external
+validation.</p>
+<hr />
+<h2>7. Limitations</h2>
+<ol>
+<li><strong>Partial recovery.</strong> Capture is 0.37–0.62; the selected leaf is a high-purity
+   subset, not the true region.</li>
+<li><strong>Modest absolute stability.</strong> Mean reference recovery 0.26–0.32; 5–7 % of
+   half-samples recover the full-data leaf at Jaccard &gt; 0.8.</li>
+<li><strong>Purity boundary.</strong> The joint stress cell misses the pre-registered purity
+   tolerance by 0.5 percentage points; the two-leaf stress cell fails outright.</li>
+<li><strong>One partition ratio.</strong> 4000/2000/2000 at n = 8000; the predictive gain falls
+   from ~35 % (70/30) to ~15 % (50/25/25).</li>
+<li><strong>Two DGPs.</strong> Single- and two-region effects on the ACTG175 covariate matrix;
+   no claim beyond that family.</li>
+<li><strong>Fixed-time estimand.</strong> S(730) only; RMST and hazard-ratio estimands are
+   separate decisions.</li>
+<li><strong>Interval coverage</strong> is ≈93 %, not 95 %; the intervals are influence-function
+   based and conditional on the selected rule.</li>
+<li><strong>Real data.</strong> ACTG175 is an illustration; the true subgroup is unknown and
+   the endpoint/follow-up process limits causal interpretation.</li>
+<li><strong>Comparator scope.</strong> The SCRE head-to-head uses one α-selection rule
+   (validation concordance), which returns roughly one rule; other α paths
+   produce different rule lists and are not covered. The comparison is also
+   confined to the two simulated DGPs, so the precision–coverage trade is
+   measured there and described, not verified, on ACTG175.</li>
+</ol>
+<hr />
+<h2>8. Reproducibility</h2>
+<p>Every experiment has a pre-registration and a verdict under <code>results/</code>. The
+replications are seeded and non-overlapping. The corrected rule implementation
+and its audit are in <code>ciscarl2/rules.py</code>, <code>ciscarl2/audit.py</code> and
+<code>results/CORRECTION_rules_simplify.md</code>; the consolidated claims are in
+<code>results/CLAIMS_v1.15.md</code>; the final consistency audit is
+<code>results/FINAL_AUDIT.md</code>; the ACTG175 output is <code>results/actg175_c200.md</code>; the
+SCRE head-to-head is <code>results/gate28_verdict.md</code> with <code>results/gate28_summary.csv</code>.
+The full notebook reproduction is <code>notebooks/CISCaRL_final.ipynb</code> (executed,
+0 error cells).</p>
+<hr />
+<h2>References</h2>
+<p>To be completed. Key citations to add: double/debiased machine learning;
+AIPW and influence-function inference; DR-learner and R-learner; causal survival
+forests [Cui et al., 2023]; the 2026 survival HTE framework combining
+meta-learners and tree-based subgroup discovery; interpretable causal subgroup
+discovery; stability selection; policy learning under constraints; the ACTG175
+source documentation (<code>speff2trial</code>).</p></body></html>
