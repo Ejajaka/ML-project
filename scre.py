@@ -324,7 +324,7 @@ class SurvivalCausalRuleEnsemble:
         event : ndarray (n,) bool  event indicator (required)
         treatment : ndarray (n,)  binary treatment indicator (required)
         t_star : float or None
-            Fixed survival horizon (e.g. 1095.75 days). If None, the median
+            Fixed survival horizon (e.g. 730 days). If None, the median
             observed event time is used (the original default).
         """
         if time is None or event is None:
