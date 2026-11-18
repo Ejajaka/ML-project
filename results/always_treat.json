@@ -1,0 +1,46 @@
+[
+  {
+    "kind": "single",
+    "method": "C200-always",
+    "reps": 40,
+    "mae": 0.055973003,
+    "purity": 0.8340830719,
+    "capture": 0.6272427266,
+    "per_treated": 0.1632654649,
+    "coverage": 0.1870375,
+    "null_rate": 0.0
+  },
+  {
+    "kind": "single",
+    "method": "SCRE",
+    "reps": 40,
+    "mae": 0.0519206363,
+    "purity": 0.4330853809,
+    "capture": 0.9470397362,
+    "per_treated": 0.0843077817,
+    "coverage": 0.544225,
+    "null_rate": 0.0
+  },
+  {
+    "kind": "two",
+    "method": "C200-always",
+    "reps": 40,
+    "mae": 0.0713060735,
+    "purity": 0.847039621,
+    "capture": 0.3738041489,
+    "per_treated": 0.1626580488,
+    "coverage": 0.157275,
+    "null_rate": 0.0
+  },
+  {
+    "kind": "two",
+    "method": "SCRE",
+    "reps": 40,
+    "mae": 0.0684681907,
+    "purity": 0.5849428144,
+    "capture": 0.8020145879,
+    "per_treated": 0.0979411241,
+    "coverage": 0.5599125,
+    "null_rate": 0.0
+  }
+]

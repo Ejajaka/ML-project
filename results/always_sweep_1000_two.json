@@ -1,0 +1,16 @@
+{
+  "design": "two-region DGP",
+  "method": "C200-always",
+  "n": 8000,
+  "reps": 1000,
+  "seeds": "340100-341099",
+  "commit": 100.0,
+  "fallback": 0.0,
+  "support": 680.774,
+  "purity": 0.8139062622148859,
+  "capture": 0.3654222066798851,
+  "per_treated": 0.1536271499215501,
+  "coverage": 0.16996899999999998,
+  "null_rate": 0.1,
+  "mae": 0.068958911276457
+}

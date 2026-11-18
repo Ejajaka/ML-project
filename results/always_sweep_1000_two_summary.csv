@@ -1,0 +1,2 @@
+design,method,n,reps,seeds,commit,fallback,support,purity,capture,per_treated,coverage,null_rate,mae
+two-region DGP,C200-always,8000,1000,340100-341099,100.0,0.0,680.774,0.8139062622148859,0.3654222066798851,0.1536271499215501,0.16996899999999998,0.1,0.068958911276457
