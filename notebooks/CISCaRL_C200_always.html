@@ -7796,7 +7796,7 @@ a.anchor-link {
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <main>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4a8ce394">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4a8f76b0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7806,8 +7806,8 @@ a.anchor-link {
 dataset with a <strong>known subgroup</strong>, then runs the <strong>same 40 replications</strong> used in
 the Gate 28 C200-vs-SCRE head-to-head, and a <strong>1,000-rep C200-always sweep</strong>.</p>
 <ul>
-<li><strong>C200-commit</strong>: select a leaf, treat only if the validation one-sided 95% LCB &gt; 0 (production).</li>
-<li><strong>C200-always</strong>: select a leaf and always treat it (confidence layer removed).</li>
+<li><strong>C200-always</strong>: select a leaf and always treat it (no confidence/LCB layer).</li>
+<li><strong>SCRE</strong>: comparator on the same assessment patients.</li>
 <li><strong>SCRE</strong>: comparator on the same assessment patients.</li>
 </ul>
 <p>Stages: data → simulation DGP → split → Cox nuisances → AIPW ψ → CART → support
@@ -7815,7 +7815,7 @@ and selection → validation → commit vs always → assessment → 40-rep summ
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=aeffc671">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=30d62cd4">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7879,7 +7879,7 @@ numpy: 2.2.2 | pandas: 2.3.3
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=3a392410">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=c0998a0e">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7891,7 +7891,7 @@ to show the data structure. The pipeline below is then run on a simulated
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=fb9b9c3d">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=34a61836">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8044,7 +8044,7 @@ at risk at 730: 750
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=62fb466f">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d79d3d7a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8055,7 +8055,7 @@ The data are split 4,000 discovery / 2,000 validation / 2,000 assessment.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=65250d60">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=2867ffc6">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8118,7 +8118,7 @@ true region prevalence (assessment): 0.267
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=9748b0f3">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=5d6f3ca7">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8132,7 +8132,7 @@ true region prevalence (assessment): 0.267
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=08f524df">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b83a328d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8174,7 +8174,7 @@ max       0.991     0.982     0.989
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=81fd1577">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=01e8bf76">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8188,7 +8188,7 @@ patient level, which is why the tree averages it inside leaves.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=6273c0a8">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=18083ba1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8239,7 +8239,7 @@ dtype: float64
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4fddb027">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=7cfaba58">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8250,7 +8250,7 @@ has a mean ψ.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=8da7baa5">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=1e28625f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8368,7 +8368,7 @@ has a mean ψ.</p>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6f04bac7">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=017c9b63">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8379,7 +8379,7 @@ has a mean ψ.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=1f591a93">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=8e72bc51">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8417,21 +8417,18 @@ fallback     : False
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6223d7bd">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=557276b6">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Stage-7-%E2%80%94-validation:-C200-commit-vs-C200-always">Stage 7 — validation: C200-commit vs C200-always<a class="anchor-link" href="#Stage-7-%E2%80%94-validation:-C200-commit-vs-C200-always">¶</a></h2><p>The selected leaf is re-estimated on the disjoint validation patients.</p>
-<ul>
-<li><strong>C200-commit</strong> uses the leaf only if <code>τ̂ &gt; 1.645 · SE</code> (one-sided 95% LCB &gt; 0).</li>
-<li><strong>C200-always</strong> ignores the LCB and always treats the leaf.</li>
-</ul>
+<h2 id="Stage-7-%E2%80%94-validation-effect-(no-LCB-gate)">Stage 7 — validation effect (no LCB gate)<a class="anchor-link" href="#Stage-7-%E2%80%94-validation-effect-(no-LCB-gate)">¶</a></h2><p>The selected leaf is re-estimated on the disjoint validation patients.
+C200-always reports the effect and SE but does <strong>not</strong> use the LCB to decide.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=6942bd48">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b1edba36">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8452,14 +8449,9 @@ fallback     : False
 <span class="n">hi_eff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dphi_v</span><span class="p">[</span><span class="n">mv</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="k">if</span> <span class="n">kv</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
 <span class="n">hi_se</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">dphi_v</span><span class="p">[</span><span class="n">mv</span><span class="p">]</span> <span class="o">-</span> <span class="n">hi_eff</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">/</span> <span class="n">kv</span><span class="p">)</span>
          <span class="k">if</span> <span class="n">kv</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-<span class="n">committed</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">hi_eff</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">hi_se</span><span class="p">)</span>
-                 <span class="ow">and</span> <span class="n">hi_eff</span> <span class="o">&gt;</span> <span class="mf">1.645</span> <span class="o">*</span> <span class="n">hi_se</span><span class="p">)</span>
-
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"validation effect: </span><span class="si">{</span><span class="n">hi_eff</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"validation SE    : </span><span class="si">{</span><span class="n">hi_se</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"one-sided LCB    : </span><span class="si">{</span><span class="n">hi_eff</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1.645</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">hi_se</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"C200-commit would treat:"</span><span class="p">,</span> <span class="n">committed</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"C200-always always treats the selected leaf."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"C200-always: always treat the selected leaf (no LCB gate)."</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8474,27 +8466,25 @@ fallback     : False
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>validation effect: +0.165
 validation SE    : 0.073
-one-sided LCB    : +0.045
-C200-commit would treat: True
-C200-always always treats the selected leaf.
+C200-always: always treat the selected leaf (no LCB gate).
 </pre>
 </div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=7f7a0f22">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=9478b8f7">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="Stage-8-%E2%80%94-assessment-metrics-for-this-replication">Stage 8 — assessment metrics for this replication<a class="anchor-link" href="#Stage-8-%E2%80%94-assessment-metrics-for-this-replication">¶</a></h2><p>We score C200-always on the untouched assessment patients, and fit SCRE on the
-same discovery data for comparison. C200-commit is omitted from the table.</p>
+same discovery data for comparison.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d8181580">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=09b261ce">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8504,20 +8494,11 @@ same discovery data for comparison. C200-commit is omitted from the table.</p>
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">masks_a</span> <span class="o">=</span> <span class="p">[</span><span class="n">eval_rule</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">"cond"</span><span class="p">],</span> <span class="n">XA</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">leaves</span><span class="p">]</span>
 
-<span class="n">use_c</span> <span class="o">=</span> <span class="n">effs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="n">committed</span><span class="p">:</span>
-    <span class="n">use_c</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">const</span>
-<span class="n">tbl_c</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">cond</span><span class="o">=</span><span class="n">leaves</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s2">"cond"</span><span class="p">],</span> <span class="n">mask</span><span class="o">=</span><span class="n">masks_a</span><span class="p">[</span><span class="n">t</span><span class="p">],</span>
-              <span class="n">eff</span><span class="o">=</span><span class="n">use_c</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">se</span><span class="o">=</span><span class="n">ses_v</span><span class="p">[</span><span class="n">t</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">leaves</span><span class="p">))]</span>
-<span class="n">pred_c</span> <span class="o">=</span> <span class="n">_assign_effs</span><span class="p">(</span><span class="n">tbl_c</span><span class="p">,</span> <span class="n">XA</span><span class="p">,</span> <span class="n">use_c</span><span class="p">,</span> <span class="n">const</span><span class="p">)</span>
-<span class="n">treated_c</span> <span class="o">=</span> <span class="n">masks_a</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">if</span> <span class="n">committed</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">XA</span><span class="p">),</span> <span class="nb">bool</span><span class="p">)</span>
-
 <span class="n">tbl_a</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">cond</span><span class="o">=</span><span class="n">leaves</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s2">"cond"</span><span class="p">],</span> <span class="n">mask</span><span class="o">=</span><span class="n">masks_a</span><span class="p">[</span><span class="n">t</span><span class="p">],</span>
               <span class="n">eff</span><span class="o">=</span><span class="n">effs</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">se</span><span class="o">=</span><span class="n">ses_v</span><span class="p">[</span><span class="n">t</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">leaves</span><span class="p">))]</span>
 <span class="n">pred_a</span> <span class="o">=</span> <span class="n">_assign_effs</span><span class="p">(</span><span class="n">tbl_a</span><span class="p">,</span> <span class="n">XA</span><span class="p">,</span> <span class="n">effs</span><span class="p">,</span> <span class="n">const</span><span class="p">)</span>
 <span class="n">treated_a</span> <span class="o">=</span> <span class="n">masks_a</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
 
-<span class="n">mc_c</span> <span class="o">=</span> <span class="n">_metrics</span><span class="p">(</span><span class="n">pred_c</span><span class="p">,</span> <span class="n">treated_c</span><span class="p">,</span> <span class="n">truthA</span><span class="p">,</span> <span class="n">uniA</span><span class="p">)</span>
 <span class="n">mc_a</span> <span class="o">=</span> <span class="n">_metrics</span><span class="p">(</span><span class="n">pred_a</span><span class="p">,</span> <span class="n">treated_a</span><span class="p">,</span> <span class="n">truthA</span><span class="p">,</span> <span class="n">uniA</span><span class="p">)</span>
 <span class="n">display</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([{</span><span class="s2">"method"</span><span class="p">:</span> <span class="s2">"C200-always"</span><span class="p">,</span> <span class="o">**</span><span class="n">mc_a</span><span class="p">}])</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
 
@@ -8651,19 +8632,18 @@ same discovery data for comparison. C200-commit is omitted from the table.</p>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=87898cda">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=5ac5bf2b">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="Stage-9-%E2%80%94-40-rep-results:-C200-always-vs-SCRE">Stage 9 — 40-rep results: C200-always vs SCRE<a class="anchor-link" href="#Stage-9-%E2%80%94-40-rep-results:-C200-always-vs-SCRE">¶</a></h2><p>This recomputes 40 replications × 2 DGPs with the same seeds (300100–300139).
-C200-commit is computed internally but excluded from the table. If parallel
-execution is unavailable, it falls back to <code>results/always_treat.csv</code>.</p>
+If parallel execution is unavailable, it falls back to <code>results/always_treat.csv</code>.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=252c37fb">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=4c329891">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8672,7 +8652,7 @@ execution is unavailable, it falls back to <code>results/always_treat.csv</code>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">joblib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">always_treat_ablation</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_rep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">c200_always</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_rep</span>
 
 <span class="n">cfg_all</span> <span class="o">=</span> <span class="n">_config23</span><span class="p">()</span>
 <span class="n">lam_all</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_calibrate_kind</span><span class="p">(</span><span class="n">cfg_all</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"single"</span><span class="p">,</span> <span class="s2">"two"</span><span class="p">)}</span>
@@ -8687,8 +8667,6 @@ execution is unavailable, it falls back to <code>results/always_treat.csv</code>
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">"parallel recompute unavailable, loading saved run:"</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="p">))</span>
     <span class="n">res</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">ROOT</span> <span class="o">/</span> <span class="s2">"results"</span> <span class="o">/</span> <span class="s2">"always_treat.csv"</span><span class="p">)</span>
-
-<span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="n">res</span><span class="p">[</span><span class="s2">"method"</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">"C200-commit"</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
 <span class="n">agg</span> <span class="o">=</span> <span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"kind"</span><span class="p">,</span> <span class="s2">"method"</span><span class="p">])</span>
        <span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">reps</span><span class="o">=</span><span class="p">(</span><span class="s2">"rep"</span><span class="p">,</span> <span class="s2">"size"</span><span class="p">),</span> <span class="n">mae</span><span class="o">=</span><span class="p">(</span><span class="s2">"mae"</span><span class="p">,</span> <span class="s2">"mean"</span><span class="p">),</span>
@@ -8816,7 +8794,7 @@ execution is unavailable, it falls back to <code>results/always_treat.csv</code>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=579fa4d1">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d9b7770d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8828,7 +8806,7 @@ per-treated benefit, coverage, null rate, and MAE.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ef56f138">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=0f7742b4">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8936,7 +8914,7 @@ per-treated benefit, coverage, null rate, and MAE.</p>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=93b09c57">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=754793c1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8945,16 +8923,15 @@ per-treated benefit, coverage, null rate, and MAE.</p>
 <h2 id="What-the-notebook-shows">What the notebook shows<a class="anchor-link" href="#What-the-notebook-shows">¶</a></h2><ul>
 <li>The pipeline is a <strong>regression</strong> problem: the CART is trained on the continuous
 pseudo-outcome ψ, not on a class label.</li>
-<li><strong>C200-commit</strong> can abstain; <strong>C200-always</strong> always treats the selected leaf.</li>
-<li>On a single replication, the two differ only when validation LCB ≤ 0.</li>
-<li>Across 40 reps, removing the confidence layer raises coverage and capture
-slightly and may improve MAE, but lowers purity and per-treated benefit.</li>
+<li>C200-always always treats the selected leaf; there is no abstention/LCB layer.</li>
+<li>Across 40 reps it is compared with SCRE on the same assessment patients.</li>
 <li>At 1,000 reps, the C200-always operating point is stable (purity, capture,
 per-treated benefit, null rate).</li>
 <li>SCRE treats far more patients and captures more total benefit, but is much less
-pure; C200 remains the high-purity, low-coverage point on the frontier.</li>
+pure; C200-always remains the high-purity, low-coverage point on the frontier.</li>
 </ul>
-<p><strong>Bottom line:</strong> the confidence layer is a deliberate trade-off, not a free loss.</p>
+<p><strong>Bottom line:</strong> C200-always is a precision-oriented policy; SCRE is a
+coverage-oriented one. Neither dominates.</p>
 </div>
 </div>
 </div>

@@ -1,12 +1,10 @@
-"""Ablation: remove the commitment (confidence) layer from C200.
+"""C200-always: the C200 pipeline with the confidence (LCB) layer removed.
 
-Three methods on identical simulated data and assessment patients:
-  C200-commit  : selected leaf treated only if validation LCB > 0 (production)
-  C200-always  : selected leaf always treated (no confidence layer)
-  SCRE         : comparator
+The selected leaf is always treated. There is no confidence/LCB layer in this
+file. SCRE is kept as the comparator.
 
-Run:  py -3.13 always_treat_ablation.py --reps 20 --kinds single,two
-Writes: results/always_treat.csv, .json, .md
+Run:  py -3.13 c200_always.py --reps 40 --kinds single,two
+Writes: results/always_treat.csv, _summary.csv, .md, .json
 """
 from __future__ import annotations
 
@@ -19,7 +17,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
 from sklearn.model_selection import train_test_split
 
 from ciscarl2 import dgp
@@ -44,7 +41,6 @@ except Exception:  # noqa: BLE001
 ROOT = Path(__file__).resolve().parent
 START = 300100
 SUP = 200
-Z = 1.645
 
 
 def regions_kind(X, cfg, kind):
@@ -68,7 +64,7 @@ def run_rep(rep, kind, cfg, lam_c0):
     A = rng.binomial(1, 0.5, n)
     sim = _sim_kind(X, A, lam_c0, cfg[5], rng, e1, e2)
     T, E = sim["Tobs"], sim["E"]
-    truth = (sim["S1"] - sim["S0"])
+    truth = sim["S1"] - sim["S0"]
 
     ii = np.arange(n)
     disc, hold = train_test_split(ii, test_size=0.5, random_state=seed,
@@ -98,42 +94,19 @@ def run_rep(rep, kind, cfg, lam_c0):
     effs = np.array([t["eff"] for t in tbl_v], float)
     ses = np.array([t["se"] for t in tbl_v], float)
     effs = np.where(np.isfinite(effs), effs, const)
-    mv = eval_rule(leaves[j]["cond"], XV)
-    kv = int(mv.sum())
-    hi_eff = float(dphi_v[mv].mean()) if kv else np.nan
-    hi_se = (float(np.sqrt(((dphi_v[mv] - hi_eff) ** 2).sum()) / kv)
-             if kv else np.nan)
-    committed = bool(np.isfinite(hi_eff) and np.isfinite(hi_se)
-                     and hi_eff > Z * hi_se)
 
     masks_a = [eval_rule(r["cond"], XA) for r in leaves]
-
-    # production: commitment layer
-    use_c = effs.copy()
-    if not committed:
-        use_c[j] = const
-    tbl_c = [dict(cond=leaves[t]["cond"], mask=masks_a[t],
-                  eff=use_c[t], se=ses[t]) for t in range(len(leaves))]
-    pred_c = _assign_effs(tbl_c, XA, use_c, const)
-    treated_c = masks_a[j] if committed else np.zeros(len(XA), bool)
-
-    # ablation: no confidence layer
     tbl_a = [dict(cond=leaves[t]["cond"], mask=masks_a[t],
                   eff=effs[t], se=ses[t]) for t in range(len(leaves))]
     pred_a = _assign_effs(tbl_a, XA, effs, const)
     treated_a = masks_a[j]
 
-    rows = []
-    for method, pred, treated in (
-            ("C200-commit", pred_c, treated_c),
-            ("C200-always", pred_a, treated_a)):
-        mc = _metrics(pred, treated, truthA, uniA)
-        rows.append(dict(rep=rep, kind=kind, method=method,
-                         committed=bool(committed), support=int(sup[j]),
-                         **mc))
+    mc = _metrics(pred_a, treated_a, truthA, uniA)
+    rows = [dict(rep=rep, kind=kind, method="C200-always",
+                 support=int(sup[j]), **mc)]
 
-    # SCRE
     tau_s = np.full(len(XA), np.nan)
+    n_rules_s = 0
     ok_s = True
     try:
         if SurvivalCausalRuleEnsemble is None:
@@ -153,25 +126,25 @@ def run_rep(rep, kind, cfg, lam_c0):
         s.t_star_ = TSTAR
         with contextlib.redirect_stdout(io.StringIO()):
             tau_s = np.asarray(s.predict(XA), float)
+        n_rules_s = len(getattr(s, "selected_rules_", []))
     except Exception:
         ok_s = False
 
     if ok_s and np.all(np.isfinite(tau_s)):
         ms = _metrics(tau_s, tau_s > 0, truthA, uniA)
         rows.append(dict(rep=rep, kind=kind, method="SCRE",
-                         committed=True, support=np.nan, **ms))
+                         support=np.nan, **ms))
     else:
         rows.append(dict(rep=rep, kind=kind, method="SCRE",
-                         committed=True, support=np.nan, mae=np.nan,
-                         spearman=np.nan, capture=np.nan, purity=np.nan,
-                         per_treated=np.nan, efficiency=np.nan, null=np.nan,
-                         coverage=np.nan))
+                         support=np.nan, mae=np.nan, spearman=np.nan,
+                         capture=np.nan, purity=np.nan, per_treated=np.nan,
+                         efficiency=np.nan, null=np.nan, coverage=np.nan))
     return rows
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--reps", type=int, default=20)
+    ap.add_argument("--reps", type=int, default=40)
     ap.add_argument("--kinds", default="single,two")
     ap.add_argument("--jobs", type=int, default=8)
     args = ap.parse_args()
@@ -188,42 +161,36 @@ def main():
     df = pd.DataFrame([x for ch in out for x in ch])
     df.to_csv(ROOT / "results" / "always_treat.csv", index=False)
 
-    rows = []
-    for (kind, method), g in df.groupby(["kind", "method"]):
-        rows.append({
-            "kind": kind, "method": method, "reps": len(g),
-            "mae": float(g.mae.mean()),
-            "purity": float(g.purity.mean()),
-            "capture": float(g.capture.mean()),
-            "per_treated": float(g.per_treated.mean()),
-            "coverage": float(g.coverage.mean()),
-            "null_rate": float(100 * g["null"].mean()),
-        })
-    summ = pd.DataFrame(rows).sort_values(["kind", "method"])
-    summ.to_csv(ROOT / "results" / "always_treat_summary.csv", index=False)
+    agg = (df.groupby(["kind", "method"])
+           .agg(reps=("rep", "size"), mae=("mae", "mean"),
+                purity=("purity", "mean"), capture=("capture", "mean"),
+                per_treated=("per_treated", "mean"),
+                coverage=("coverage", "mean"),
+                null_rate=("null", lambda s: 100 * s.mean()))
+           .reset_index())
+    agg.to_csv(ROOT / "results" / "always_treat_summary.csv", index=False)
+    with open(ROOT / "results" / "always_treat.json", "w", encoding="utf-8") as fh:
+        json.dump(json.loads(agg.to_json(orient="records")), fh, indent=2)
 
     lines = [
-        "# Ablation: removing the commitment (confidence) layer",
+        "# C200-always vs SCRE",
         "",
         f"{args.reps} reps per DGP, n = 8,000, seeds {START}-{START+args.reps-1}.",
-        "C200-commit = production (treat only if validation LCB > 0);",
-        "C200-always = selected leaf always treated; SCRE = comparator.",
+        "C200-always has no confidence/LCB layer: the selected leaf is always treated.",
         "",
-        "| DGP | method | MAE | purity | capture | per-treated | coverage | null |",
-        "|---|---|---|---|---|---|---|---|",
+        "| DGP | method | reps | MAE | purity | capture | per-treated | coverage | null |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
-    for _, r in summ.iterrows():
+    for _, r in agg.iterrows():
         lines.append(
-            f"| {r.kind} | {r.method} | {r.mae:.4f} | {r.purity:.3f} | "
-            f"{r.capture:.3f} | {r.per_treated:+.3f} | {r.coverage:.3f} | "
-            f"{r.null_rate:.1f}% |")
+            f"| {r.kind} | {r.method} | {int(r.reps)} | {r.mae:.4f} | "
+            f"{r.purity:.3f} | {r.capture:.3f} | {r.per_treated:+.3f} | "
+            f"{r.coverage:.3f} | {r.null_rate:.1f}% |")
     (ROOT / "results" / "always_treat.md").write_text(
         "\n".join(lines) + "\n", encoding="utf-8")
-    with open(ROOT / "results" / "always_treat.json", "w", encoding="utf-8") as fh:
-        json.dump(json.loads(summ.to_json(orient="records")), fh, indent=2)
 
-    print("\n=== ablation summary ===")
-    print(summ.round(4).to_string(index=False))
+    print("\n=== C200-always vs SCRE ===")
+    print(agg.round(4).to_string(index=False))
     print(f"\nelapsed {time.time()-t0:.1f}s")
 
 
